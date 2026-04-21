@@ -22,7 +22,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Talk Chronometer - Control")
-        self.setFixedSize(560, 680)
+        self.setFixedSize(520, 520)
 
         self.remaining_seconds = 0
         self.loaded_preset_seconds = 0
@@ -48,19 +48,19 @@ class MainWindow(QMainWindow):
 
     def _build_ui(self) -> None:
         layout = QVBoxLayout()
-        layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(12)
+        layout.setContentsMargins(12, 10, 12, 10)
+        layout.setSpacing(8)
 
         monitor_row = QHBoxLayout()
         monitor_row.setSpacing(8)
         self.combo_monitors = QComboBox()
-        self.combo_monitors.setMinimumHeight(36)
+        self.combo_monitors.setMinimumHeight(32)
         self.btn_output = QPushButton("Abrir")
         self.btn_close_output = QPushButton("Fechar")
         self.btn_refresh_monitors = QPushButton("↻")
         self.btn_refresh_monitors.setFixedSize(36, 36)
         for _btn in (self.btn_output, self.btn_close_output):
-            _btn.setMinimumHeight(36)
+            _btn.setMinimumHeight(32)
         monitor_row.addWidget(self.combo_monitors, 1)
         monitor_row.addWidget(self.btn_output)
         monitor_row.addWidget(self.btn_close_output)
@@ -81,7 +81,7 @@ class MainWindow(QMainWindow):
         self.preset_buttons = []
         for index, minutes in enumerate(preset_minutes):
             button = QPushButton(f"{minutes} min")
-            button.setMinimumHeight(44)
+            button.setMinimumHeight(38)
             row = index // 4
             col = index % 4
             presets_layout.addWidget(button, row, col)
@@ -92,17 +92,17 @@ class MainWindow(QMainWindow):
         manual_row = QHBoxLayout()
         manual_row.setSpacing(8)
         self.btn_minus = QPushButton("−")
-        self.btn_minus.setFixedSize(48, 44)
+        self.btn_minus.setFixedSize(44, 38)
         self.spin_minutes = QSpinBox()
         self.spin_minutes.setRange(1, 180)
         self.spin_minutes.setValue(10)
         self.spin_minutes.setSuffix(" min")
         self.spin_minutes.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.spin_minutes.setMinimumHeight(44)
+        self.spin_minutes.setMinimumHeight(38)
         self.btn_plus = QPushButton("+")
-        self.btn_plus.setFixedSize(48, 44)
+        self.btn_plus.setFixedSize(44, 38)
         self.btn_set = QPushButton("Definir")
-        self.btn_set.setMinimumHeight(44)
+        self.btn_set.setMinimumHeight(38)
         manual_row.addWidget(self.btn_minus)
         manual_row.addWidget(self.spin_minutes, 1)
         manual_row.addWidget(self.btn_plus)
@@ -116,11 +116,11 @@ class MainWindow(QMainWindow):
         self.btn_reset = QPushButton("Reset")
 
         for btn in (self.btn_start, self.btn_stop, self.btn_reset):
-            btn.setMinimumHeight(56)
+            btn.setMinimumHeight(46)
             controls_row.addWidget(btn)
 
         self.btn_attention = QPushButton("Call Attention")
-        self.btn_attention.setMinimumHeight(56)
+        self.btn_attention.setMinimumHeight(46)
 
         footer = QHBoxLayout()
         self.label_clock = QLabel("00:00:00")
