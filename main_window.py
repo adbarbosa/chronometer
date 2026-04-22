@@ -206,9 +206,8 @@ class MainWindow(QMainWindow):
         if self.remaining_seconds <= 0 and self.loaded_preset_seconds > 0:
             self.remaining_seconds = self.loaded_preset_seconds
 
-        if self.remaining_seconds > 0:
-            self.output_window.stop_attention_flash()
-            self.countdown_timer.start()
+        self.output_window.stop_attention_flash()
+        self.countdown_timer.start()
 
     def stop_countdown(self) -> None:
         self.countdown_timer.stop()
@@ -265,16 +264,18 @@ class MainWindow(QMainWindow):
         self.label_date.setStyleSheet(s["footer"])
 
     def _tick_countdown(self) -> None:
-        if self.remaining_seconds > 0:
-            self.remaining_seconds -= 1
-            self._update_displays()
-
-        if self.remaining_seconds <= 0:
-            self.countdown_timer.stop()
+        self.remaining_seconds -= 1
+        self._update_displays()
 
     def _update_displays(self) -> None:
-        minutes, seconds = divmod(max(self.remaining_seconds, 0), 60)
-        self.time_main_label.setText(f"{minutes:02d}:{seconds:02d}")
+        secs = self.remaining_seconds
+        if secs < 0:
+            minutes, seconds = divmod(-secs, 60)
+            text = f"-{minutes:02d}:{seconds:02d}"
+        else:
+            minutes, seconds = divmod(secs, 60)
+            text = f"{minutes:02d}:{seconds:02d}"
+        self.time_main_label.setText(text)
         self.output_window.update_time_display(self.remaining_seconds)
 
     def _update_datetime(self) -> None:

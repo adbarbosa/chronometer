@@ -60,8 +60,12 @@ class TimerWindow(QWidget):
         super().resizeEvent(event)
 
     def update_time_display(self, remaining_seconds: int) -> None:
-        minutes, seconds = divmod(max(remaining_seconds, 0), 60)
-        self.label.setText(f"{minutes:02d}:{seconds:02d}")
+        if remaining_seconds < 0:
+            minutes, seconds = divmod(-remaining_seconds, 60)
+            self.label.setText(f"-{minutes:02d}:{seconds:02d}")
+        else:
+            minutes, seconds = divmod(remaining_seconds, 60)
+            self.label.setText(f"{minutes:02d}:{seconds:02d}")
         self._update_time_color(remaining_seconds)
 
     def _update_time_color(self, remaining_seconds: int) -> None:

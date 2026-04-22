@@ -65,8 +65,8 @@ OUTPUT = {
 
 # ---- Limites de tempo (em segundos) para mudança de cor ------------------
 
-TIME_WARN_SECS   = 300   # 5 minutos
-TIME_DANGER_SECS = 120   # 2 minutos
+TIME_WARN_SECS   = 60   # 1 minuto
+TIME_DANGER_SECS = 10   # 10 segundos
 
 # ---- Tamanhos de fonte ---------------------------------------------------
 
