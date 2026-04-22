@@ -14,6 +14,7 @@ from PyQt6.QtCore import QDateTime, QTimer, Qt
 from PyQt6.QtGui import QIcon
 from pathlib import Path
 
+from chronometer import __version__
 from chronometer.theme import CLOCK_INTERVAL, COUNTDOWN_INTERVAL, build_control_styles
 from chronometer.timer_window import TimerWindow
 
@@ -26,7 +27,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Chronometer - Control")
+        self.setWindowTitle(f"Chronometer v{__version__} - Control")
         self.setFixedSize(520, 520)
         self.setWindowIcon(QIcon(str(ICON_PATH)))
 

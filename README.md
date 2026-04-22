@@ -1,5 +1,7 @@
 # Chronometer
 
+**Versão:** 0.1.0
+
 Cronómetro para apresentações e talks, com painel de controlo e janela de output para segundo monitor.
 
 ## Funcionalidades
@@ -75,22 +77,42 @@ O executável fica em `dist/Chronometer`.
 
 ### Windows (PyInstaller)
 
+#### CMD / PowerShell
+
 ```cmd
-cd C:\caminho\para\o\directorio_que_contem_chronometer
+cd C:\caminho\para\chronometer
 python -m venv .venv
 .venv\Scripts\activate
 pip install PyQt6 pyinstaller
-pyinstaller --onefile --windowed --icon chronometer/icon/chronometer-stopwatch-svgrepo-com.ico --name Chronometer chronometer/__main__.py
+pyinstaller --onefile --windowed --icon icon/chronometer-stopwatch-svgrepo-com.ico --name Chronometer __main__.py
 ```
 
-O executável fica em `dist\Chronometer.exe`.
+#### Git Bash (MINGW64)
+
+```bash
+cd ~/chronometer
+python -m venv .venv
+source .venv/Scripts/activate
+pip install PyQt6 pyinstaller
+pyinstaller --onefile --windowed --icon icon/chronometer-stopwatch-svgrepo-com.ico --name Chronometer __main__.py
+```
+
+O executável fica em `dist/Chronometer.exe`.
 
 ### Comando rapido no Windows
 
-Se ja tiveres o ambiente preparado, o comando principal para gerar o executavel e:
+Se ja tiveres o ambiente preparado, activa a venv primeiro e depois:
+
+```bash
+# Git Bash (MINGW64)
+source .venv/Scripts/activate
+pyinstaller --onefile --windowed --icon icon/chronometer-stopwatch-svgrepo-com.ico --name Chronometer __main__.py
+```
 
 ```cmd
-pyinstaller --onefile --windowed --icon chronometer/icon/chronometer-stopwatch-svgrepo-com.ico --name Chronometer chronometer/__main__.py
+# CMD / PowerShell
+.venv\Scripts\activate
+pyinstaller --onefile --windowed --icon icon/chronometer-stopwatch-svgrepo-com.ico --name Chronometer __main__.py
 ```
 
 O ícone da aplicação é o stopwatch SVG convertido para `.ico` e usado também na janela principal.
