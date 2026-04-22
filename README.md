@@ -31,6 +31,9 @@ chronometer/
 ├── app.py               # Cria QApplication e MainWindow
 ├── main_window.py       # Painel de controlo
 ├── timer_window.py      # Janela de output (segundo monitor)
+├── icon/
+│   ├── chronometer-stopwatch-svgrepo-com.svg  # Asset original
+│   └── chronometer-stopwatch-svgrepo-com.ico  # Ícone para Windows/PyInstaller
 └── theme.py             # Cores, fontes, tamanhos e stylesheets
 ```
 
@@ -77,7 +80,7 @@ cd C:\caminho\para\o\directorio_que_contem_chronometer
 python -m venv .venv
 .venv\Scripts\activate
 pip install PyQt6 pyinstaller
-pyinstaller --onefile --windowed --name TalkChronometer chronometer\__main__.py
+pyinstaller --onefile --windowed --icon chronometer\icon\chronometer-stopwatch-svgrepo-com.ico --name TalkChronometer chronometer\__main__.py
 ```
 
 O executável fica em `dist\TalkChronometer.exe`.
@@ -87,8 +90,10 @@ O executável fica em `dist\TalkChronometer.exe`.
 Se ja tiveres o ambiente preparado, o comando principal para gerar o executavel e:
 
 ```cmd
-pyinstaller --onefile --windowed --name TalkChronometer chronometer\__main__.py
+pyinstaller --onefile --windowed --icon chronometer\icon\chronometer-stopwatch-svgrepo-com.ico --name TalkChronometer chronometer\__main__.py
 ```
+
+O ícone da aplicação é o stopwatch SVG convertido para `.ico` e usado também na janela principal.
 
 ### Alternativa: Nuitka
 

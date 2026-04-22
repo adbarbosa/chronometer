@@ -11,9 +11,14 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 from PyQt6.QtCore import QDateTime, QTimer, Qt
+from PyQt6.QtGui import QIcon
+from pathlib import Path
 
 from chronometer.theme import CLOCK_INTERVAL, COUNTDOWN_INTERVAL, build_control_styles
 from chronometer.timer_window import TimerWindow
+
+
+ICON_PATH = Path(__file__).resolve().parent / "icon" / "chronometer-stopwatch-svgrepo-com.ico"
 
 
 class MainWindow(QMainWindow):
@@ -23,6 +28,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Chronometer - Control")
         self.setFixedSize(520, 520)
+        self.setWindowIcon(QIcon(str(ICON_PATH)))
 
         self.remaining_seconds = 0
         self.loaded_preset_seconds = 0
