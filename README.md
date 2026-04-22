@@ -57,8 +57,10 @@ python -m chronometer
 ### Linux (PyInstaller)
 
 ```bash
-pip install pyinstaller
 cd /caminho/para/python
+python3 -m venv .venv
+source .venv/bin/activate
+pip install PyQt6 pyinstaller
 pyinstaller --onefile --windowed --name TalkChronometer chronometer/__main__.py
 ```
 
@@ -71,8 +73,10 @@ O executável fica em `dist/TalkChronometer`.
 ### Windows (PyInstaller)
 
 ```cmd
-pip install pyinstaller
 cd C:\caminho\para\python
+python -m venv .venv
+.venv\Scripts\activate
+pip install PyQt6 pyinstaller
 pyinstaller --onefile --windowed --name TalkChronometer chronometer\__main__.py
 ```
 
@@ -81,7 +85,10 @@ O executável fica em `dist\TalkChronometer.exe`.
 ### Alternativa: Nuitka
 
 ```bash
-pip install nuitka
+cd /caminho/para/python
+python3 -m venv .venv
+source .venv/bin/activate
+pip install PyQt6 nuitka
 nuitka --standalone --onefile --enable-plugin=pyqt6 --disable-console chronometer/__main__.py -o TalkChronometer
 ```
 
