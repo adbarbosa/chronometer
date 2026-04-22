@@ -54,8 +54,8 @@ ATTENTION = {
 OUTPUT = {
     "bg":            "black",
     "time_normal":   "white",
-    "time_warn":     "#ff9f0a",   # < 5 min
-    "time_danger":   "#ff3b30",   # < 2 min
+    "time_warn":     "#ff9f0a",   # < 1 min
+    "time_danger":   "#ff3b30",   # < 0 min
     "flash_red":     "#d50000",
     "flash_white":   "white",
     "flash_contrast":"white",     # cor do texto sobre fundo vermelho
@@ -66,7 +66,7 @@ OUTPUT = {
 # ---- Limites de tempo (em segundos) para mudança de cor ------------------
 
 TIME_WARN_SECS   = 60   # 1 minuto
-TIME_DANGER_SECS = 10   # 10 segundos
+TIME_DANGER_SECS = 0    # 0 segundos
 
 # ---- Tamanhos de fonte ---------------------------------------------------
 
