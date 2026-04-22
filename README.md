@@ -39,25 +39,25 @@ chronometer/
 ### Linux
 
 ```bash
-cd /caminho/para/python
+cd /caminho/para/o/directorio_que_contem_chronometer
 python3 -m chronometer
 ```
 
 ### Windows
 
 ```cmd
-cd C:\caminho\para\python
+cd C:\caminho\para\o\directorio_que_contem_chronometer
 python -m chronometer
 ```
 
-> **Nota:** o comando deve ser executado a partir do directório que **contém** a pasta `chronometer/`, não de dentro dela.
+> **Nota:** o comando deve ser executado a partir do directório que **contém** a pasta `chronometer/`, não de dentro dela. O `__main__.py` também suporta execução direta no caso de empacotamento ou debug local.
 
 ## Compilar para Executável
 
 ### Linux (PyInstaller)
 
 ```bash
-cd /caminho/para/python
+cd /caminho/para/o/directorio_que_contem_chronometer
 python3 -m venv .venv
 source .venv/bin/activate
 pip install PyQt6 pyinstaller
@@ -73,7 +73,7 @@ O executável fica em `dist/TalkChronometer`.
 ### Windows (PyInstaller)
 
 ```cmd
-cd C:\caminho\para\python
+cd C:\caminho\para\o\directorio_que_contem_chronometer
 python -m venv .venv
 .venv\Scripts\activate
 pip install PyQt6 pyinstaller
@@ -82,10 +82,18 @@ pyinstaller --onefile --windowed --name TalkChronometer chronometer\__main__.py
 
 O executável fica em `dist\TalkChronometer.exe`.
 
+### Comando rapido no Windows
+
+Se ja tiveres o ambiente preparado, o comando principal para gerar o executavel e:
+
+```cmd
+pyinstaller --onefile --windowed --name TalkChronometer chronometer\__main__.py
+```
+
 ### Alternativa: Nuitka
 
 ```bash
-cd /caminho/para/python
+cd /caminho/para/o/directorio_que_contem_chronometer
 python3 -m venv .venv
 source .venv/bin/activate
 pip install PyQt6 nuitka

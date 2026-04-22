@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import QLabel, QVBoxLayout, QWidget
 from PyQt6.QtCore import QDateTime, QTimer, Qt
 from PyQt6.QtGui import QMouseEvent
 
-from .theme import (
+from chronometer.theme import (
     CLOCK_INTERVAL, FLASH_INTERVAL_MS, FLASH_MAX_TICKS,
     OUTPUT, TIME_DANGER_SECS, TIME_WARN_SECS,
     OUTPUT_TIMER_H_RATIO, OUTPUT_TIMER_W_RATIO,

@@ -12,8 +12,8 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import QDateTime, QTimer, Qt
 
-from .theme import CLOCK_INTERVAL, COUNTDOWN_INTERVAL, build_control_styles
-from .timer_window import TimerWindow
+from chronometer.theme import CLOCK_INTERVAL, COUNTDOWN_INTERVAL, build_control_styles
+from chronometer.timer_window import TimerWindow
 
 
 class MainWindow(QMainWindow):
