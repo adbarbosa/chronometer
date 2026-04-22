@@ -21,7 +21,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Talk Chronometer - Control")
+        self.setWindowTitle("Chronometer - Control")
         self.setFixedSize(520, 520)
 
         self.remaining_seconds = 0
