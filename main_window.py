@@ -15,6 +15,7 @@ from PyQt6.QtGui import QIcon
 from pathlib import Path
 
 from chronometer import __version__
+from chronometer.config import ConfigManager
 from chronometer.theme import CLOCK_INTERVAL, COUNTDOWN_INTERVAL, build_control_styles
 from chronometer.timer_window import TimerWindow
 
@@ -52,6 +53,9 @@ class MainWindow(QMainWindow):
         self._update_displays()
         self._update_datetime()
         self.clock_timer.start()
+        
+        # Carregar preferência do último monitor
+        self._load_saved_monitor_preference()
 
     def _build_ui(self) -> None:
         layout = QVBoxLayout()
@@ -185,6 +189,21 @@ class MainWindow(QMainWindow):
             self.combo_monitors.setCurrentIndex(1)
         self.label_status.setText(f"{len(screens)} monitor(es) detectado(s)")
 
+    def _load_saved_monitor_preference(self) -> None:
+        """Carrega e seleciona o último monitor usado, com fallback."""
+        saved_idx = ConfigManager.get_last_monitor_index(default=1)
+        screens = QApplication.screens()
+        
+        # Validar se o monitor salvo ainda existe
+        if 0 <= saved_idx < len(screens):
+            self.combo_monitors.setCurrentIndex(saved_idx)
+        elif len(screens) > 1:
+            # Fallback: usar segundo monitor se disponível
+            self.combo_monitors.setCurrentIndex(1)
+        else:
+            # Apenas um monitor: usar índice 0
+            self.combo_monitors.setCurrentIndex(0)
+
     def setup_monitors(self) -> None:
         idx = self.combo_monitors.currentData()
         screens = QApplication.screens()
@@ -201,6 +220,10 @@ class MainWindow(QMainWindow):
         self.output_window.move(geometry.left(), geometry.top())
         self.output_window.showFullScreen()
         self.label_status.setText(f"Aberto em: {self.combo_monitors.currentText()}")
+        
+        # Guardar preferência do monitor
+        ConfigManager.save_monitor_index(idx)
+        
         self._update_displays()
 
     def load_preset(self, minutes: int) -> None:

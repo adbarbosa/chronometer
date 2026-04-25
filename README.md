@@ -1,6 +1,6 @@
 # Chronometer
 
-**Versão:** 0.1.0
+**Versão:** 0.2.0
 
 Cronómetro para apresentações e talks, com painel de controlo e janela de output para segundo monitor.
 
