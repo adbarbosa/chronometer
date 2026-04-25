@@ -1,11 +1,11 @@
 import sys
-import locale
 from pathlib import Path
 
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtGui import QIcon
 
 from chronometer import __version__
+from chronometer.config import ConfigManager
 from chronometer.i18n import setup_i18n
 from chronometer.main_window import MainWindow
 
@@ -15,8 +15,9 @@ ICON_PATH = Path(__file__).resolve().parent / "icon" / "chronometer-stopwatch-sv
 
 def main() -> None:
     # Configurar internacionalização antes de criar a UI
-    lang = locale.getdefaultlocale()[0] or "en_US"
-    setup_i18n(lang)
+    # Usar idioma guardado nas configurações, ou detetar do sistema
+    saved_lang = ConfigManager.get_language()
+    setup_i18n(saved_lang)
     
     app = QApplication(sys.argv)
     app.setApplicationName("Chronometer")

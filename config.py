@@ -14,7 +14,13 @@ class ConfigManager:
     # Valores por defeito
     DEFAULTS = {
         "last_monitor_index": 1,  # Usar segundo monitor se disponível
+        "language": None,  # None = usar idioma do sistema
+        "dark_mode": False,  # Tema claro por defeito
     }
+    
+    # Idiomas suportados
+    SUPPORTED_LANGUAGES = ["pt_PT", "en_US"]
+    DEFAULT_LANGUAGE = "pt_PT"
 
     @classmethod
     def _ensure_config_dir(cls) -> None:
@@ -78,3 +84,25 @@ class ConfigManager:
     def save_monitor_index(cls, index: int) -> None:
         """Guarda o índice do monitor."""
         cls.save("last_monitor_index", int(index))
+
+    @classmethod
+    def get_language(cls) -> str | None:
+        """Obtém o idioma configurado (None = usar idioma do sistema)."""
+        return cls.get("language", None)
+
+    @classmethod
+    def save_language(cls, lang: str | None) -> None:
+        """Guarda a preferência de idioma."""
+        if lang is not None and lang not in cls.SUPPORTED_LANGUAGES:
+            lang = cls.DEFAULT_LANGUAGE
+        cls.save("language", lang)
+
+    @classmethod
+    def get_dark_mode(cls) -> bool:
+        """Obtém a preferência de tema escuro."""
+        return cls.get("dark_mode", False)
+
+    @classmethod
+    def save_dark_mode(cls, enabled: bool) -> None:
+        """Guarda a preferência de tema escuro."""
+        cls.save("dark_mode", bool(enabled))

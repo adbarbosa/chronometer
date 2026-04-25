@@ -1,7 +1,6 @@
 from PyQt6.QtWidgets import QLabel, QVBoxLayout, QWidget
 from PyQt6.QtCore import QDateTime, QTimer, Qt
 from PyQt6.QtGui import QMouseEvent
-import gettext
 
 from chronometer.theme import (
     CLOCK_INTERVAL, FLASH_INTERVAL_MS, FLASH_MAX_TICKS,
@@ -11,15 +10,12 @@ from chronometer.theme import (
     output_bg_style, output_clock_style, output_flash_bg, output_time_style,
 )
 
-_ = gettext.gettext
-
 
 class TimerWindow(QWidget):
     """Janela que aparecerá no segundo monitor (Output)"""
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle(_("Timer Output"))
         self.setStyleSheet(output_bg_style())
 
         self.flash_timer = QTimer(self)
@@ -52,6 +48,7 @@ class TimerWindow(QWidget):
         layout.addWidget(self.clock_label)
         self.setLayout(layout)
         self._update_output_clock()
+        self.retranslate_ui()
 
     def resizeEvent(self, event) -> None:
         h = event.size().height()
@@ -119,3 +116,7 @@ class TimerWindow(QWidget):
 
     def _on_clock_clicked(self, event: QMouseEvent) -> None:
         self.hide()
+
+    def retranslate_ui(self) -> None:
+        """Atualiza os textos da UI para o idioma atual."""
+        self.setWindowTitle(_("Timer Output"))

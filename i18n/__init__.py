@@ -5,12 +5,16 @@ Usa gettext para suportar múltiplos idiomas.
 Idiomas suportados: pt_PT (Portugal), en_US (English)
 """
 
+import builtins
 import gettext
 import locale
 from pathlib import Path
 
 # Localizar pasta de traduções
 LOCALE_DIR = Path(__file__).resolve().parent / "locales"
+
+# Idioma atualmente ativo
+_current_language: str | None = None
 
 
 def _get_system_language() -> str:
@@ -34,15 +38,28 @@ def _get_system_language() -> str:
     return 'pt_PT'
 
 
-def setup_i18n(lang: str | None = None) -> None:
+def get_current_language() -> str:
+    """Retorna o idioma atualmente ativo."""
+    global _current_language
+    return _current_language or _get_system_language()
+
+
+def setup_i18n(lang: str | None = None) -> str:
     """
     Configura gettext para o idioma especificado.
     
     Args:
         lang: Idioma no formato 'pt_PT', 'en_US', etc. Se None, detecta do sistema.
+    
+    Returns:
+        O idioma efetivamente configurado.
     """
+    global _current_language
+    
     if lang is None:
         lang = _get_system_language()
+    
+    _current_language = lang
     
     try:
         translation = gettext.translation(
@@ -51,7 +68,10 @@ def setup_i18n(lang: str | None = None) -> None:
             languages=[lang],
             fallback=True
         )
-        translation.install()
+        # Instalar globalmente no builtins para que _() funcione em todo o lado
+        builtins.__dict__['_'] = translation.gettext
     except Exception as e:
         # Fallback: usar identidade (sem tradução)
-        gettext.install("chronometer")
+        builtins.__dict__['_'] = lambda x: x
+    
+    return lang

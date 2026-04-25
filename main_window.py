@@ -13,17 +13,21 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import QDateTime, QTimer, Qt
 from PyQt6.QtGui import QIcon
 from pathlib import Path
-import gettext
 
 from chronometer import __version__
 from chronometer.config import ConfigManager
+from chronometer.i18n import setup_i18n, get_current_language
 from chronometer.theme import CLOCK_INTERVAL, COUNTDOWN_INTERVAL, build_control_styles
 from chronometer.timer_window import TimerWindow
 
 
 ICON_PATH = Path(__file__).resolve().parent / "icon" / "chronometer-stopwatch-svgrepo-com.ico"
 
-_ = gettext.gettext
+# Mapeamento de códigos de idioma para nomes legíveis
+LANGUAGE_NAMES = {
+    "pt_PT": "Português (PT)",
+    "en_US": "English (US)",
+}
 
 
 class MainWindow(QMainWindow):
@@ -31,13 +35,14 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle(f"Chronometer v{__version__} - {_("Control")}")
         self.setFixedSize(520, 520)
         self.setWindowIcon(QIcon(str(ICON_PATH)))
 
         self.remaining_seconds = 0
         self.loaded_preset_seconds = 0
-        self.dark_mode = False
+        
+        # Carregar preferência de tema
+        self.dark_mode = ConfigManager.get_dark_mode()
 
         self.countdown_timer = QTimer(self)
         self.countdown_timer.setInterval(COUNTDOWN_INTERVAL)
@@ -55,10 +60,14 @@ class MainWindow(QMainWindow):
         self._apply_theme()
         self._update_displays()
         self._update_datetime()
+        self._retranslate_ui()
         self.clock_timer.start()
         
         # Carregar preferência do último monitor
         self._load_saved_monitor_preference()
+        
+        # Selecionar idioma atual no combo
+        self._select_current_language()
 
     def _build_ui(self) -> None:
         layout = QVBoxLayout()
@@ -139,12 +148,21 @@ class MainWindow(QMainWindow):
         footer = QHBoxLayout()
         self.label_clock = QLabel("00:00:00")
         self.label_date = QLabel("01/01/2000")
-        self.btn_dark_mode = QPushButton(f"\U0001f319 {_("Modo Escuro")}")
+        self.btn_dark_mode = QPushButton()
         self.btn_dark_mode.setFixedHeight(28)
+        
+        # Seletor de idioma
+        self.combo_language = QComboBox()
+        self.combo_language.setFixedHeight(28)
+        self.combo_language.setMinimumWidth(120)
+        for lang_code, lang_name in LANGUAGE_NAMES.items():
+            self.combo_language.addItem(lang_name, lang_code)
+        
         self.label_clock.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.label_date.setAlignment(Qt.AlignmentFlag.AlignRight)
         footer.addWidget(self.label_clock)
         footer.addStretch(1)
+        footer.addWidget(self.combo_language)
         footer.addWidget(self.btn_dark_mode)
         footer.addStretch(1)
         footer.addWidget(self.label_date)
@@ -175,6 +193,7 @@ class MainWindow(QMainWindow):
         self.btn_minus.clicked.connect(lambda: self.spin_minutes.stepDown())
         self.btn_plus.clicked.connect(lambda: self.spin_minutes.stepUp())
         self.btn_set.clicked.connect(self._apply_manual_time)
+        self.combo_language.currentIndexChanged.connect(self._on_language_changed)
 
         for button, minutes in self.preset_buttons:
             button.clicked.connect(lambda _checked=False, m=minutes: self.load_preset(m))
@@ -260,15 +279,70 @@ class MainWindow(QMainWindow):
 
     def toggle_dark_mode(self) -> None:
         self.dark_mode = not self.dark_mode
+        ConfigManager.save_dark_mode(self.dark_mode)
         self._apply_theme()
+
+    def _select_current_language(self) -> None:
+        """Seleciona o idioma atual no combo box."""
+        current_lang = get_current_language()
+        for i in range(self.combo_language.count()):
+            if self.combo_language.itemData(i) == current_lang:
+                self.combo_language.blockSignals(True)
+                self.combo_language.setCurrentIndex(i)
+                self.combo_language.blockSignals(False)
+                break
+
+    def _on_language_changed(self, index: int) -> None:
+        """Callback quando o utilizador muda o idioma."""
+        lang_code = self.combo_language.itemData(index)
+        if lang_code:
+            # Guardar preferência
+            ConfigManager.save_language(lang_code)
+            # Reconfigurar i18n
+            setup_i18n(lang_code)
+            # Atualizar toda a UI
+            self._retranslate_ui()
+            self.output_window.retranslate_ui()
+
+    def _retranslate_ui(self) -> None:
+        """Atualiza todos os textos da UI para o idioma atual."""
+        self.setWindowTitle(f"Chronometer v{__version__} - {_('Control')}")
+        
+        # Botões de monitor
+        self.btn_output.setText(_("Abrir"))
+        self.btn_close_output.setText(_("Fechar"))
+        
+        # Presets
+        for button, minutes in self.preset_buttons:
+            button.setText(f"{minutes}{_(' min')}")
+        
+        # Botão definir
+        self.btn_set.setText(_("Definir"))
+        
+        # Controlos
+        self.btn_start.setText(_("Iniciar"))
+        self.btn_stop.setText(_("Parar"))
+        self.btn_reset.setText(_("Repor"))
+        self.btn_attention.setText(_("Chamar Atenção"))
+        
+        # Botão de tema (atualiza com base no estado atual)
+        if self.dark_mode:
+            self.btn_dark_mode.setText(f"\u2600 {_('Modo Claro')}")
+        else:
+            self.btn_dark_mode.setText(f"\U0001f319 {_('Modo Escuro')}")
+        
+        # Atualizar status dos monitores
+        screens = QApplication.screens()
+        self.label_status.setText(_(f"{len(screens)} monitor(es) detectado(s)"))
 
     def _apply_theme(self) -> None:
         s = build_control_styles(self.dark_mode)
 
+        # Atualizar texto do botão de tema
         if self.dark_mode:
-            self.btn_dark_mode.setText(f"\u2600 {_("Modo Claro")}")
+            self.btn_dark_mode.setText(f"\u2600 {_('Modo Claro')}")
         else:
-            self.btn_dark_mode.setText(f"\U0001f319 {_("Modo Escuro")}")
+            self.btn_dark_mode.setText(f"\U0001f319 {_('Modo Escuro')}")
 
         self.centralWidget().setStyleSheet(s["background"])
         self.label_status.setStyleSheet(s["status"])
@@ -293,6 +367,7 @@ class MainWindow(QMainWindow):
 
         self.btn_attention.setStyleSheet(s["attention_btn"])
         self.btn_dark_mode.setStyleSheet(s["toggle_btn"])
+        self.combo_language.setStyleSheet(s["toggle_btn"])
         self.label_clock.setStyleSheet(s["footer"])
         self.label_date.setStyleSheet(s["footer"])
 
