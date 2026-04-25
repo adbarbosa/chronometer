@@ -8,10 +8,20 @@ Idiomas suportados: pt_PT (Portugal), en_US (English)
 import builtins
 import gettext
 import locale
+import sys
 from pathlib import Path
 
 # Localizar pasta de traduções
-LOCALE_DIR = Path(__file__).resolve().parent / "locales"
+if getattr(sys, 'frozen', False):
+    # Se estiver a correr como um executável compilado (PyInstaller)
+    # O PyInstaller extrai os ficheiros para uma pasta temporária definida em sys._MEIPASS
+    BASE_DIR = Path(sys._MEIPASS)
+else:
+    # Se estiver a correr como script Python normal
+    # O __file__ está em chronometer/i18n/__init__.py, por isso o parent.parent é a raiz
+    BASE_DIR = Path(__file__).resolve().parent.parent
+
+LOCALE_DIR = BASE_DIR / "i18n" / "locales"
 
 # Idioma atualmente ativo
 _current_language: str | None = None

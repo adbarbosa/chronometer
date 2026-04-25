@@ -1,6 +1,6 @@
 # Chronometer
 
-**Versão:** 0.3.0
+**Versão:** 0.4.0
 
 Cronómetro para apresentações e talks, com painel de controlo e janela de output para segundo monitor. Suporta múltiplos idiomas (pt-PT, en-US).
 
@@ -72,63 +72,31 @@ python -m chronometer
 
 ## Compilar para Executável
 
-### Linux (PyInstaller)
+Para compilar a aplicação de forma correta, garantindo que todos os recursos (ícones e traduções) sejam incluídos, utilize o script de build fornecido.
+
+### Passo 1: Preparar o ambiente
 
 ```bash
-cd /caminho/para/o/directorio_que_contem_chronometer
+# Linux
 python3 -m venv .venv
 source .venv/bin/activate
 pip install PyQt6 pyinstaller
-pyinstaller --onefile --windowed --name Chronometer chronometer/__main__.py
-```
 
-O executável fica em `dist/Chronometer`.
-
-```bash
-./dist/Chronometer
-```
-
-### Windows (PyInstaller)
-
-#### CMD / PowerShell
-
-```cmd
-cd C:\caminho\para\chronometer
+# Windows (CMD)
 python -m venv .venv
 .venv\Scripts\activate
 pip install PyQt6 pyinstaller
-pyinstaller --onefile --windowed --icon icon/chronometer-stopwatch-svgrepo-com.ico --name Chronometer __main__.py
 ```
 
-#### Git Bash (MINGW64)
+### Passo 2: Executar o Build
+
+Execute o script `build.py` na raiz do projeto. Este script automatiza a configuração do PyInstaller para todos os sistemas operativos.
 
 ```bash
-cd ~/chronometer
-python -m venv .venv
-source .venv/Scripts/activate
-pip install PyQt6 pyinstaller
-pyinstaller --onefile --windowed --icon icon/chronometer-stopwatch-svgrepo-com.ico --name Chronometer __main__.py
+python build.py
 ```
 
-O executável fica em `dist/Chronometer.exe`.
-
-### Comando rapido no Windows
-
-Se ja tiveres o ambiente preparado, activa a venv primeiro e depois:
-
-```bash
-# Git Bash (MINGW64)
-source .venv/Scripts/activate
-pyinstaller --onefile --windowed --icon icon/chronometer-stopwatch-svgrepo-com.ico --name Chronometer __main__.py
-```
-
-```cmd
-# CMD / PowerShell
-.venv\Scripts\activate
-pyinstaller --onefile --windowed --icon icon/chronometer-stopwatch-svgrepo-com.ico --name Chronometer __main__.py
-```
-
-O ícone da aplicação é o stopwatch SVG convertido para `.ico` e usado também na janela principal.
+O executável final será gerado na pasta `dist/`.
 
 ### Alternativa: Nuitka
 
