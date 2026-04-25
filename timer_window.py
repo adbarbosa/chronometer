@@ -1,6 +1,7 @@
 from PyQt6.QtWidgets import QLabel, QVBoxLayout, QWidget
 from PyQt6.QtCore import QDateTime, QTimer, Qt
 from PyQt6.QtGui import QMouseEvent
+import gettext
 
 from chronometer.theme import (
     CLOCK_INTERVAL, FLASH_INTERVAL_MS, FLASH_MAX_TICKS,
@@ -10,13 +11,15 @@ from chronometer.theme import (
     output_bg_style, output_clock_style, output_flash_bg, output_time_style,
 )
 
+_ = gettext.gettext
+
 
 class TimerWindow(QWidget):
     """Janela que aparecerá no segundo monitor (Output)"""
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Timer Output")
+        self.setWindowTitle(_("Timer Output"))
         self.setStyleSheet(output_bg_style())
 
         self.flash_timer = QTimer(self)

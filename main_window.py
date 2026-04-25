@@ -13,6 +13,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import QDateTime, QTimer, Qt
 from PyQt6.QtGui import QIcon
 from pathlib import Path
+import gettext
 
 from chronometer import __version__
 from chronometer.config import ConfigManager
@@ -22,13 +23,15 @@ from chronometer.timer_window import TimerWindow
 
 ICON_PATH = Path(__file__).resolve().parent / "icon" / "chronometer-stopwatch-svgrepo-com.ico"
 
+_ = gettext.gettext
+
 
 class MainWindow(QMainWindow):
     """Painel de Controle Principal"""
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle(f"Chronometer v{__version__} - Control")
+        self.setWindowTitle(f"Chronometer v{__version__} - {_("Control")}")
         self.setFixedSize(520, 520)
         self.setWindowIcon(QIcon(str(ICON_PATH)))
 
@@ -66,8 +69,8 @@ class MainWindow(QMainWindow):
         monitor_row.setSpacing(8)
         self.combo_monitors = QComboBox()
         self.combo_monitors.setMinimumHeight(32)
-        self.btn_output = QPushButton("Abrir")
-        self.btn_close_output = QPushButton("Fechar")
+        self.btn_output = QPushButton(_("Abrir"))
+        self.btn_close_output = QPushButton(_("Fechar"))
         self.btn_refresh_monitors = QPushButton("↻")
         self.btn_refresh_monitors.setFixedSize(36, 36)
         for _btn in (self.btn_output, self.btn_close_output):
@@ -91,7 +94,7 @@ class MainWindow(QMainWindow):
         preset_minutes = [10, 15, 20, 25, 30, 35, 45, 60]
         self.preset_buttons = []
         for index, minutes in enumerate(preset_minutes):
-            button = QPushButton(f"{minutes} min")
+            button = QPushButton(f"{minutes}{_(" min")}")
             button.setMinimumHeight(38)
             row = index // 4
             col = index % 4
@@ -112,7 +115,7 @@ class MainWindow(QMainWindow):
         self.spin_minutes.setMinimumHeight(38)
         self.btn_plus = QPushButton("+")
         self.btn_plus.setFixedSize(44, 38)
-        self.btn_set = QPushButton("Definir")
+        self.btn_set = QPushButton(_("Definir"))
         self.btn_set.setMinimumHeight(38)
         manual_row.addWidget(self.btn_minus)
         manual_row.addWidget(self.spin_minutes, 1)
@@ -122,21 +125,21 @@ class MainWindow(QMainWindow):
         controls_row = QHBoxLayout()
         controls_row.setSpacing(8)
 
-        self.btn_start = QPushButton("Start")
-        self.btn_stop = QPushButton("Stop")
-        self.btn_reset = QPushButton("Reset")
+        self.btn_start = QPushButton(_("Iniciar"))
+        self.btn_stop = QPushButton(_("Parar"))
+        self.btn_reset = QPushButton(_("Repor"))
 
         for btn in (self.btn_start, self.btn_stop, self.btn_reset):
             btn.setMinimumHeight(46)
             controls_row.addWidget(btn)
 
-        self.btn_attention = QPushButton("Call Attention")
+        self.btn_attention = QPushButton(_("Chamar Atenção"))
         self.btn_attention.setMinimumHeight(46)
 
         footer = QHBoxLayout()
         self.label_clock = QLabel("00:00:00")
         self.label_date = QLabel("01/01/2000")
-        self.btn_dark_mode = QPushButton("\U0001f319 Dark Mode")
+        self.btn_dark_mode = QPushButton(f"\U0001f319 {_("Modo Escuro")}")
         self.btn_dark_mode.setFixedHeight(28)
         self.label_clock.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.label_date.setAlignment(Qt.AlignmentFlag.AlignRight)
@@ -187,7 +190,7 @@ class MainWindow(QMainWindow):
             )
         if len(screens) > 1:
             self.combo_monitors.setCurrentIndex(1)
-        self.label_status.setText(f"{len(screens)} monitor(es) detectado(s)")
+        self.label_status.setText(_(f"{len(screens)} monitor(es) detectado(s)"))
 
     def _load_saved_monitor_preference(self) -> None:
         """Carrega e seleciona o último monitor usado, com fallback."""
@@ -215,7 +218,7 @@ class MainWindow(QMainWindow):
         geometry = screen.geometry()
         self.output_window.move(geometry.left(), geometry.top())
         self.output_window.showFullScreen()
-        self.label_status.setText(f"Aberto em: {self.combo_monitors.currentText()}")
+        self.label_status.setText(_(f"Aberto em: {self.combo_monitors.currentText()}"))
         
         # Guardar preferência do monitor
         ConfigManager.save_monitor_index(idx)
@@ -253,7 +256,7 @@ class MainWindow(QMainWindow):
 
     def close_output_window(self) -> None:
         self.output_window.hide()
-        self.label_status.setText("Output fechado.")
+        self.label_status.setText(_("Output fechado."))
 
     def toggle_dark_mode(self) -> None:
         self.dark_mode = not self.dark_mode
@@ -263,16 +266,16 @@ class MainWindow(QMainWindow):
         s = build_control_styles(self.dark_mode)
 
         if self.dark_mode:
-            self.btn_dark_mode.setText("\u2600 Light Mode")
+            self.btn_dark_mode.setText(f"\u2600 {_("Modo Claro")}")
         else:
-            self.btn_dark_mode.setText("\U0001f319 Dark Mode")
+            self.btn_dark_mode.setText(f"\U0001f319 {_("Modo Escuro")}")
 
         self.centralWidget().setStyleSheet(s["background"])
         self.label_status.setStyleSheet(s["status"])
         self.time_main_label.setStyleSheet(s["timer"])
         self.presets_container.setStyleSheet(s["presets_box"])
 
-        for btn, _ in self.preset_buttons:
+        for btn, _unused in self.preset_buttons:
             btn.setStyleSheet(s["preset_btn"])
 
         for btn in (self.btn_minus, self.btn_plus):

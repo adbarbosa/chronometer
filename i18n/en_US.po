@@ -1,0 +1,77 @@
+# English (United States) translation for Chronometer
+# Copyright (C) 2026 Chronometer
+# This file is distributed under the same license as the Chronometer package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Chronometer 0.3.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-25 11:30+0000\n"
+"PO-Revision-Date: 2026-04-25 11:30+0000\n"
+"Last-Translator: Chronometer Team\n"
+"Language-Team: English (United States)\n"
+"Language: en_US\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: app.py
+msgid "Control"
+msgstr "Control"
+
+#: main_window.py
+msgid "Abrir"
+msgstr "Open"
+
+#: main_window.py
+msgid "Fechar"
+msgstr "Close"
+
+#: main_window.py
+msgid " min"
+msgstr " min"
+
+#: main_window.py
+msgid "Definir"
+msgstr "Set"
+
+#: main_window.py
+msgid "Iniciar"
+msgstr "Start"
+
+#: main_window.py
+msgid "Parar"
+msgstr "Stop"
+
+#: main_window.py
+msgid "Repor"
+msgstr "Reset"
+
+#: main_window.py
+msgid "Chamar Atenção"
+msgstr "Call Attention"
+
+#: main_window.py
+msgid "Modo Escuro"
+msgstr "Dark Mode"
+
+#: main_window.py
+msgid "Modo Claro"
+msgstr "Light Mode"
+
+#: main_window.py
+msgid "{count} monitor(es) detectado(s)"
+msgstr "{count} monitor(s) detected"
+
+#: main_window.py
+msgid "Aberto em: {monitor_name}"
+msgstr "Opened in: {monitor_name}"
+
+#: main_window.py
+msgid "Output fechado."
+msgstr "Output closed."
+
+#: timer_window.py
+msgid "Timer Output"
+msgstr "Timer Output"

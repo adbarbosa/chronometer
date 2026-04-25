@@ -1,8 +1,8 @@
 # Chronometer
 
-**Versão:** 0.2.0
+**Versão:** 0.3.0
 
-Cronómetro para apresentações e talks, com painel de controlo e janela de output para segundo monitor.
+Cronómetro para apresentações e talks, com painel de controlo e janela de output para segundo monitor. Suporta múltiplos idiomas (pt-PT, en-US).
 
 ## Funcionalidades
 
@@ -14,29 +14,42 @@ Cronómetro para apresentações e talks, com painel de controlo e janela de out
 - **Dark / Light mode** — alternância com um clique
 - **Texto responsivo** — o timer e relógio ajustam-se à resolução do monitor
 - **Fechar output clicando na hora** — esconde a janela sem fechar a aplicação
+- **Internacionalização** — Suporte para português (Portugal) e inglês (EUA)
 
 ## Requisitos
 
 - Python 3.10+
 - PyQt6
+- polib (para compilar traduções)
 
 ```bash
-pip install PyQt6
+pip install PyQt6 polib
 ```
 
 ## Estrutura do Projeto
 
 ```
 chronometer/
-├── __init__.py          # Package marker
-├── __main__.py          # Entry point (python -m chronometer)
-├── app.py               # Cria QApplication e MainWindow
-├── main_window.py       # Painel de controlo
-├── timer_window.py      # Janela de output (segundo monitor)
+├── __init__.py              # Package marker (v0.3.0)
+├── __main__.py              # Entry point (python -m chronometer)
+├── app.py                   # Cria QApplication, setup i18n
+├── main_window.py           # Painel de controlo
+├── timer_window.py          # Janela de output (segundo monitor)
+├── theme.py                 # Cores, fontes, tamanhos, stylesheets
+├── i18n/                    # Internacionalização
+│   ├── __init__.py          # setup_i18n() - configuração de gettext
+│   ├── compile.py           # Compilador .po → .mo (usa polib)
+│   ├── chronometer.pot      # Template de traduções
+│   ├── pt_PT.po             # Português (Portugal)
+│   ├── en_US.po             # Inglês (EUA)
+│   ├── test_i18n.py         # Testes de i18n
+│   └── locales/             # Compilados (gerados)
+│       ├── pt_PT/LC_MESSAGES/chronometer.mo
+│       └── en_US/LC_MESSAGES/chronometer.mo
 ├── icon/
 │   ├── chronometer-stopwatch-svgrepo-com.svg  # Asset original
 │   └── chronometer-stopwatch-svgrepo-com.ico  # Ícone para Windows/PyInstaller
-└── theme.py             # Cores, fontes, tamanhos e stylesheets
+└── ...
 ```
 
 ## Executar
@@ -128,6 +141,65 @@ nuitka --standalone --onefile --enable-plugin=pyqt6 --disable-console chronomete
 ```
 
 > **Importante:** o executável gerado é específico do sistema operativo onde é compilado. Para gerar um `.exe` para Windows, é necessário compilar no Windows.
+
+## Internacionalização (i18n)
+
+A aplicação suporta múltiplos idiomas usando **gettext** (padrão Python/GNOME).
+
+### Idiomas Suportados
+
+- **pt_PT** — Português (Portugal) [padrão]
+- **en_US** — Inglês (EUA)
+
+### Adicionar Novo Idioma
+
+1. **Criar novo ficheiro PO:**
+   ```bash
+   cp chronometer/i18n/chronometer.pot chronometer/i18n/xx_YY.po
+   ```
+   Substituir `xx_YY` pelo código do idioma (ex: `pt_BR`, `es_ES`, `fr_FR`)
+
+2. **Traduzir strings no ficheiro .po:**
+   - Abrir com Poedit, Lokalize, ou editor de texto
+   - Preencher `msgstr` com a tradução para cada `msgid`
+   - Exemplo:
+     ```po
+     msgid "Abrir"
+     msgstr "Open"
+     ```
+
+3. **Compilar traduções:**
+   ```bash
+   cd chronometer
+   python3 i18n/compile.py
+   ```
+   Isto gera ficheiros `.mo` em `i18n/locales/{xx_YY}/LC_MESSAGES/chronometer.mo`
+
+4. **Testar:**
+   ```bash
+   LANG=xx_YY.UTF-8 python3 -m chronometer
+   ```
+
+### Como as Traduções Funcionam
+
+- **Detecção automática:** A aplicação detecta o idioma do sistema via `locale.getdefaultlocale()`
+- **Fallback:** Se o idioma não for suportado, volta para pt_PT
+- **Inicialização:** Em `app.py`, `setup_i18n()` é chamado antes de criar a UI
+
+### Ficheiros Chave
+
+- `chronometer/i18n/__init__.py` — `setup_i18n(lang)` configura gettext
+- `chronometer/i18n/compile.py` — Compila `.po` → `.mo` usando polib
+- `chronometer/i18n/test_i18n.py` — Testa se as traduções carregam corretamente
+
+### Fluxo de Desenvolvimento
+
+1. Marcar strings na UI com `_("texto")`
+2. Extrair com xgettext: `xgettext -d chronometer -p i18n app.py main_window.py ...`
+3. Gerar `.po` a partir de `.pot`
+4. Traduzir em Poedit ou editor
+5. Compilar: `python3 i18n/compile.py`
+6. Testar: `LANG=xx_YY python3 -m chronometer`
 
 ## Personalização
 
