@@ -43,8 +43,8 @@ class MainWindow(QMainWindow):
         self.clock_timer.setInterval(CLOCK_INTERVAL)
         self.clock_timer.timeout.connect(self._update_datetime)
 
-        # Inicializa a janela de saída
-        self.output_window = TimerWindow()
+        # Inicializa a janela de saída (lazy - criada quando "Abrir" é pressionado)
+        self.output_window = None
 
         self._build_ui()
         self._connect_signals()
@@ -192,6 +192,10 @@ class MainWindow(QMainWindow):
             self._populate_monitors()
             return
 
+        # Cria a janela de output na primeira vez que é pressionado o botão "Abrir"
+        if self.output_window is None:
+            self.output_window = TimerWindow()
+
         screen = screens[idx]
         geometry = screen.geometry()
         self.output_window.move(geometry.left(), geometry.top())
@@ -213,7 +217,8 @@ class MainWindow(QMainWindow):
         if self.remaining_seconds <= 0 and self.loaded_preset_seconds > 0:
             self.remaining_seconds = self.loaded_preset_seconds
 
-        self.output_window.stop_attention_flash()
+        if self.output_window is not None:
+            self.output_window.stop_attention_flash()
         self.countdown_timer.start()
 
     def stop_countdown(self) -> None:
@@ -221,16 +226,23 @@ class MainWindow(QMainWindow):
 
     def reset_countdown(self) -> None:
         self.stop_countdown()
-        self.output_window.stop_attention_flash()
+        if self.output_window is not None:
+            self.output_window.stop_attention_flash()
         self.remaining_seconds = self.loaded_preset_seconds
         self._update_displays()
 
     def call_attention(self) -> None:
-        self.output_window.start_attention_flash()
+        if self.output_window is not None:
+            self.output_window.start_attention_flash()
+        else:
+            self.label_status.setText("⚠️ Output fechado. Abra-o primeiro para chamar atenção.")
 
     def close_output_window(self) -> None:
-        self.output_window.hide()
-        self.label_status.setText("Output fechado.")
+        if self.output_window is not None:
+            self.output_window.hide()
+            self.label_status.setText("Output fechado.")
+        else:
+            self.label_status.setText("Output ainda não foi aberto.")
 
     def toggle_dark_mode(self) -> None:
         self.dark_mode = not self.dark_mode
@@ -283,7 +295,8 @@ class MainWindow(QMainWindow):
             minutes, seconds = divmod(secs, 60)
             text = f"{minutes:02d}:{seconds:02d}"
         self.time_main_label.setText(text)
-        self.output_window.update_time_display(self.remaining_seconds)
+        if self.output_window is not None:
+            self.output_window.update_time_display(self.remaining_seconds)
 
     def _update_datetime(self) -> None:
         now = QDateTime.currentDateTime()
@@ -291,5 +304,6 @@ class MainWindow(QMainWindow):
         self.label_date.setText(now.toString("dd/MM/yyyy"))
 
     def closeEvent(self, event) -> None:
-        self.output_window.close()
+        if self.output_window is not None:
+            self.output_window.close()
         event.accept()
