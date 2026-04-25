@@ -69,16 +69,16 @@ class MainWindow(QMainWindow):
         monitor_row.setSpacing(8)
         self.combo_monitors = QComboBox()
         self.combo_monitors.setMinimumHeight(32)
+        self.btn_refresh_monitors = QPushButton("↻")
         self.btn_output = QPushButton(_("Abrir"))
         self.btn_close_output = QPushButton(_("Fechar"))
-        self.btn_refresh_monitors = QPushButton("↻")
         self.btn_refresh_monitors.setFixedSize(36, 36)
         for _btn in (self.btn_output, self.btn_close_output):
             _btn.setMinimumHeight(32)
         monitor_row.addWidget(self.combo_monitors, 1)
+        monitor_row.addWidget(self.btn_refresh_monitors)
         monitor_row.addWidget(self.btn_output)
         monitor_row.addWidget(self.btn_close_output)
-        monitor_row.addWidget(self.btn_refresh_monitors)
         self.label_status = QLabel("")
         self._populate_monitors()
 
