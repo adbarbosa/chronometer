@@ -2,47 +2,55 @@ import PyInstaller.__main__
 import sys
 import os
 import platform
+from pathlib import Path
 
 def build():
     """
     Script para automatizar o processo de build do Chronometer usando PyInstaller.
     Garante que os recursos (ícones e traduções) sejam incluídos corretamente.
     """
+    # Determina o diretório onde o script build.py está localizado
+    script_dir = Path(__file__).resolve().parent
+    
     app_name = "Chronometer"
     
     # Determina o separador de caminhos para o PyInstaller (';' no Windows, ':' no Linux)
     sep = ';' if platform.system() == 'Windows' else ':'
     
-    # Define os ficheiros de dados a incluir: (origem;destino)
-    # Nota: O destino deve ser relativo à raiz do pacote ou ao local onde o script é executado
-    # Para que o i18n/__init__.py encontre os ficheiros, o destino deve manter a estrutura
+    # Define os ficheiros de dados a incluir: (origem, destino)
+    # Usamos caminhos relativos ao diretório do script
     datas = [
-        (f"chronometer/i18n/locales{sep}i18n/locales"),
-        (f"icon{sep}icon"),
+        ("i18n/locales", "i18n/locales"),
+        ("icon", "icon"),
     ]
     
     # Constrói os argumentos do PyInstaller
-    # Usamos chronometer/__main__.py como ponto de entrada
+    # O ponto de entrada é o __main__.py que está na mesma pasta que o build.py
     args = [
-        'chronometer/__main__.py',
+        '__main__.py',
         f'--name={app_name}',
         '--onefile',
         '--windowed',
     ]
     
     # Adiciona o ícone (se existir)
-    icon_path = "icon/chronometer-stopwatch-svgrepo-com.ico"
-    if os.path.exists(icon_path):
+    icon_path = script_dir / "icon" / "chronometer-stopwatch-svgrepo-com.ico"
+    if icon_path.exists():
         args.append(f'--icon={icon_path}')
     
     # Adiciona os dados (traduções e ícones)
     for src, dest in datas:
-        args.append(f'--add-data={src}')
+        # Criamos o caminho absoluto para a origem
+        full_src = script_dir / src
+        args.append(f'--add-data={full_src}{sep}{dest}')
     
     print(f"🚀 A iniciar build para {platform.system()}...")
-    print(f"🛠️ Argumentos: {' '.join(args)}")
+    print(f"📂 Diretório de trabalho: {script_dir}")
+    print(f"🛠️  Argumentos: {' '.join(args)}")
     
     try:
+        # Mudamos para o diretório do script para que o PyInstaller encontre os ficheiros
+        os.chdir(script_dir)
         PyInstaller.__main__.run(args)
         print(f"\n✅ Build concluído com sucesso! Verifique a pasta 'dist/'.")
     except Exception as e:

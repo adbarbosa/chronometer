@@ -1,6 +1,6 @@
 # Chronometer
 
-**Versão:** 0.4.0
+**Versão:** 0.4.1
 
 Cronómetro para apresentações e talks, com painel de controlo e janela de output para segundo monitor. Suporta múltiplos idiomas (pt-PT, en-US).
 
@@ -65,7 +65,7 @@ python3 -m chronometer
 
 ```cmd
 cd C:\caminho\para\o\directorio_que_contem_chronometer
-python -m chronometer
+python3 -m chronometer
 ```
 
 > **Nota:** o comando deve ser executado a partir do directório que **contém** a pasta `chronometer/`, não de dentro dela. O `__main__.py` também suporta execução direta no caso de empacotamento ou debug local.
@@ -76,24 +76,34 @@ Para compilar a aplicação de forma correta, garantindo que todos os recursos (
 
 ### Passo 1: Preparar o ambiente
 
+**Importante:** Todos os comandos devem ser executados **dentro** da pasta `chronometer/`.
+
 ```bash
 # Linux
+cd chronometer
 python3 -m venv .venv
 source .venv/bin/activate
 pip install PyQt6 pyinstaller
 
 # Windows (CMD)
-python -m venv .venv
+cd chronometer
+python3 -m venv .venv
 .venv\Scripts\activate
+pip install PyQt6 pyinstaller
+
+# Windows (Git Bash / MINGW64)
+cd chronometer
+python3 -m venv .venv
+source .venv/Scripts/activate
 pip install PyQt6 pyinstaller
 ```
 
 ### Passo 2: Executar o Build
 
-Execute o script `build.py` na raiz do projeto. Este script automatiza a configuração do PyInstaller para todos os sistemas operativos.
+Execute o script `build.py` dentro da pasta do projeto:
 
 ```bash
-python build.py
+python3 build.py
 ```
 
 O executável final será gerado na pasta `dist/`.
