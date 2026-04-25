@@ -15,7 +15,7 @@ ICON_PATH = Path(__file__).resolve().parent / "icon" / "chronometer-stopwatch-sv
 
 def main() -> None:
     # Configurar internacionalização antes de criar a UI
-    lang = locale.getdefaultlocale()[0] or "pt_PT"
+    lang = locale.getdefaultlocale()[0] or "en_US"
     setup_i18n(lang)
     
     app = QApplication(sys.argv)
