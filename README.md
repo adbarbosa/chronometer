@@ -156,7 +156,7 @@ A aplicação suporta múltiplos idiomas usando **gettext** (padrão Python/GNOM
    Isto gera ficheiros `.mo` em `i18n/locales/{xx_YY}/LC_MESSAGES/chronometer.mo`
 
 4. **Testar:**
-   ```bash
+      ```bash
    LANG=xx_YY.UTF-8 python3 -m chronometer
    ```
 
