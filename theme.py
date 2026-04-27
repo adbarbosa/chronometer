@@ -14,10 +14,13 @@ LIGHT = {
     "presets_bg":        "#efe4cf",
     "presets_border":    "#d8ccb8",
     "preset_btn_bg":     "#fff7eb",
+    "preset_btn_hover":  "#f3e7d5",
     "preset_btn_border": "#c8bca8",
     "btn_bg":            "#f4f4f4",
+    "btn_hover":         "#e2e2e2",
     "btn_border":        "#cfcfcf",
     "toggle_bg":         "#e8e8e8",
+    "toggle_hover":      "#d6d6d6",
     "toggle_border":     "#cfcfcf",
     "status_text":       "#333",
     "footer_text":       "#333",
@@ -32,10 +35,13 @@ DARK = {
     "presets_bg":        "#2a2a2a",
     "presets_border":    "#444",
     "preset_btn_bg":     "#333",
+    "preset_btn_hover":  "#444",
     "preset_btn_border": "#555",
     "btn_bg":            "#333",
+    "btn_hover":         "#444",
     "btn_border":        "#555",
     "toggle_bg":         "#444",
+    "toggle_hover":      "#555",
     "toggle_border":     "#666",
     "status_text":       "#aaa",
     "footer_text":       "#888",
@@ -44,9 +50,10 @@ DARK = {
 # ---- Botão Call Attention (igual nos dois temas) -------------------------
 
 ATTENTION = {
-    "bg":     "#c62828",
-    "border": "#8e0000",
-    "text":   "white",
+    "bg":        "#c62828",
+    "hover_bg":  "#a21616",
+    "border":    "#8e0000",
+    "text":      "white",
 }
 
 # ---- Janela de saída (TimerWindow — sempre fundo preto) ------------------
@@ -105,6 +112,28 @@ OUTPUT_CLOCK_MIN_PX  = 30     # tamanho mínimo do relógio em px
 
 # ---- Funções de construção de stylesheets --------------------------------
 
+def _button_style(
+    bg: str,
+    text_color: str,
+    border: str,
+    font_size: str,
+    font_weight: str,
+    radius: int,
+    padding: str,
+    hover_bg: str,
+) -> str:
+    """Gera stylesheet para um QPushButton com estado normal e hover."""
+    return (
+        "QPushButton {"
+        f" font-size: {font_size}; font-weight: {font_weight}; color: {text_color};"
+        f" background-color: {bg}; border: 1px solid {border};"
+        f" border-radius: {radius}px; padding: {padding};"
+        " }"
+        "QPushButton:hover {"
+        f" background-color: {hover_bg};"
+        " }"
+    )
+
 def build_control_styles(dark: bool) -> dict[str, str]:
     """Devolve um dicionário com as stylesheets para todos os widgets do
     painel de controlo (MainWindow)."""
@@ -123,30 +152,55 @@ def build_control_styles(dark: bool) -> dict[str, str]:
             f"background-color: {t['presets_bg']};"
             f"border: 1px solid {t['presets_border']}; border-radius: 10px;"
         ),
-        "preset_btn": (
-            f"font-size: {f['btn_preset']}; font-weight: 600; color: {t['text']};"
-            f"background-color: {t['preset_btn_bg']};"
-            f"border: 1px solid {t['preset_btn_border']}; border-radius: 8px;"
+        "preset_btn": _button_style(
+            bg=t['preset_btn_bg'],
+            text_color=t['text'],
+            border=t['preset_btn_border'],
+            font_size=f['btn_preset'],
+            font_weight="600",
+            radius=8,
+            padding="8px 12px",
+            hover_bg=t['preset_btn_hover'],
         ),
-        "control_btn": (
-            f"font-size: {f['btn_large']}; font-weight: 700; color: {t['text']};"
-            f"background-color: {t['btn_bg']};"
-            f"border: 1px solid {t['btn_border']}; border-radius: 10px;"
+        "control_btn": _button_style(
+            bg=t['btn_bg'],
+            text_color=t['text'],
+            border=t['btn_border'],
+            font_size=f['btn_large'],
+            font_weight="700",
+            radius=10,
+            padding="10px 16px",
+            hover_bg=t['btn_hover'],
         ),
-        "monitor_btn": (
-            f"font-size: {f['btn_monitor']}; color: {t['text']};"
-            f"background-color: {t['btn_bg']};"
-            f"border: 1px solid {t['btn_border']}; border-radius: 8px;"
+        "monitor_btn": _button_style(
+            bg=t['btn_bg'],
+            text_color=t['text'],
+            border=t['btn_border'],
+            font_size=f['btn_monitor'],
+            font_weight="600",
+            radius=8,
+            padding="8px 14px",
+            hover_bg=t['btn_hover'],
         ),
-        "attention_btn": (
-            f"font-size: {f['btn_attention']}; font-weight: 700; color: {a['text']};"
-            f"background-color: {a['bg']}; border-radius: 10px;"
-            f"border: 1px solid {a['border']};"
+        "attention_btn": _button_style(
+            bg=a['bg'],
+            text_color=a['text'],
+            border=a['border'],
+            font_size=f['btn_attention'],
+            font_weight="700",
+            radius=10,
+            padding="10px 16px",
+            hover_bg=a['hover_bg'],
         ),
-        "toggle_btn": (
-            f"font-size: {f['toggle']}; border-radius: 6px; padding: 2px 8px;"
-            f"color: {t['text']}; background-color: {t['toggle_bg']};"
-            f"border: 1px solid {t['toggle_border']};"
+        "toggle_btn": _button_style(
+            bg=t['toggle_bg'],
+            text_color=t['text'],
+            border=t['toggle_border'],
+            font_size=f['toggle'],
+            font_weight="600",
+            radius=6,
+            padding="2px 8px",
+            hover_bg=t['toggle_hover'],
         ),
         "footer": f"font-size: {f['footer']}; color: {t['footer_text']};",
         "spinbox": (
