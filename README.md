@@ -4,6 +4,16 @@
 
 Cronómetro para apresentações e talks, com painel de controlo e janela de output para segundo monitor. Suporta múltiplos idiomas (pt-PT, en-US).
 
+## Índice
+- [Funcionalidades](#funcionalidades)
+- [Requisitos](#requisitos)
+- [Estrutura do Projeto](#estrutura-do-projeto)
+- [Executar](#executar)
+- [Compilar para Executável](#compilar-para-executável)
+- [Internacionalização (i18n)](#internacionalização-i18n)
+- [Personalização](#personalização)
+- [Licença](#licença)
+
 ## Funcionalidades
 
 - **Presets de duração** — 10, 15, 20, 25, 30, 35, 45 e 60 minutos
@@ -19,12 +29,21 @@ Cronómetro para apresentações e talks, com painel de controlo e janela de out
 
 ## Requisitos
 
+### Runtime
 - Python 3.10+
 - PyQt6
-- polib (para compilar traduções)
 
+### Desenvolvimento (Traduções e Build)
+- polib (compilação de traduções)
+- pyinstaller ou nuitka (build de executáveis)
+
+### Instalação
 ```bash
-pip install PyQt6 polib
+# Apenas para executar a aplicação
+pip install PyQt6
+
+# Para desenvolvimento completo (incluindo traduções e build)
+pip install PyQt6 polib pyinstaller
 ```
 
 ## Estrutura do Projeto
@@ -110,21 +129,34 @@ python3 build.py
 
 O executável final será gerado na pasta `dist/`.
 
+### Passo 2.5: Compilar Traduções (Opcional)
+
+Se alterou traduções, certifique-se de que estão compiladas antes de gerar o executável:
+
+```bash
+# Dentro da pasta chronometer/
+python3 i18n/compile.py
+```
+
+O script `build.py` incluirá automaticamente os ficheiros `.mo` gerados no executável.
+
 ### Alternativa: Nuitka
 
 ```bash
 cd /caminho/para/o/directorio_que_contem_chronometer
 python3 -m venv .venv
 source .venv/bin/activate
-pip install PyQt6 nuitka
-nuitka --standalone --onefile --enable-plugin=pyqt6 --disable-console chronometer/__main__.py -o Chronometer
+pip install nuitka
+python3 -m nuitka --onefile --noconsole app.py
 ```
-
-> **Importante:** o executável gerado é específico do sistema operativo onde é compilado. Para gerar um `.exe` para Windows, é necessário compilar no Windows.
 
 ## Internacionalização (i18n)
 
-A aplicação suporta múltiplos idiomas usando **gettext** (padrão Python/GNOME).
+Como as Traduções Funcionam
+
+- **Detecção automática:** A aplicação detecta o idioma do sistema via `locale.getdefaultlocale()`
+- **Fallback:** Se o idioma não for suportado, volta para pt_PT
+- **Inicialização:** Em `app.py`, `setup_i18n()` é chamado antes de criar a UI
 
 ### Idiomas Suportados
 
@@ -171,15 +203,6 @@ A aplicação suporta múltiplos idiomas usando **gettext** (padrão Python/GNOM
 - `chronometer/i18n/__init__.py` — `setup_i18n(lang)` configura gettext
 - `chronometer/i18n/compile.py` — Compila `.po` → `.mo` usando polib
 - `chronometer/i18n/test_i18n.py` — Testa se as traduções carregam corretamente
-
-### Fluxo de Desenvolvimento
-
-1. Marcar strings na UI com `_("texto")`
-2. Extrair com xgettext: `xgettext -d chronometer -p i18n app.py main_window.py ...`
-3. Gerar `.po` a partir de `.pot`
-4. Traduzir em Poedit ou editor
-5. Compilar: `python3 i18n/compile.py`
-6. Testar: `LANG=xx_YY python3 -m chronometer`
 
 ## Personalização
 
