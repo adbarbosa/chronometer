@@ -118,7 +118,7 @@ class MainWindow(QMainWindow):
         manual_row = QHBoxLayout()
         manual_row.setSpacing(8)
         self.spin_minutes = QSpinBox()
-        self.spin_minutes.setRange(1, 180)
+        self.spin_minutes.setRange(0, 180)
         self.spin_minutes.setValue(10)
         self.spin_minutes.setSuffix(" min")
         self.spin_minutes.setAlignment(Qt.AlignmentFlag.AlignCenter)
