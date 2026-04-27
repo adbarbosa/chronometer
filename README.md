@@ -1,6 +1,6 @@
 # Chronometer
 
-**Versão:** 0.4.4
+**Versão:** 0.4.5
 
 Cronómetro para apresentações e talks, com painel de controlo e janela de output para segundo monitor. Suporta múltiplos idiomas (pt-PT, en-US).
 

@@ -203,6 +203,21 @@ def build_control_styles(dark: bool) -> dict[str, str]:
             hover_bg=t['toggle_hover'],
         ),
         "footer": f"font-size: {f['footer']}; color: {t['footer_text']};",
+        "combo": (
+            f"QComboBox {{"
+            f" font-size: {f['toggle']}; font-weight: 600; color: {t['text']};"
+            f" background-color: {t['toggle_bg']};"
+            f" border: 1px solid {t['toggle_border']}; border-radius: 6px;"
+            f" padding: 2px 8px;"
+            f" }}"
+            f"QComboBox:hover {{"
+            f" background-color: {t['toggle_hover']};"
+            f" }}"
+            f"QComboBox QAbstractItemView {{"
+            f" color: {t['text']}; background-color: {t['toggle_bg']};"
+            f" selection-background-color: {t['toggle_hover']};"
+            f" }}"
+        ),
         "spinbox": (
             f"font-size: {f['btn_preset']}; font-weight: 600; color: {t['text']};"
             f"background-color: {t['preset_btn_bg']};"

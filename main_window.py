@@ -1,5 +1,6 @@
 from PyQt6.QtWidgets import (
     QApplication,
+    QAbstractSpinBox,
     QComboBox,
     QGridLayout,
     QHBoxLayout,
@@ -123,9 +124,10 @@ class MainWindow(QMainWindow):
         self.spin_minutes.setSuffix(" min")
         self.spin_minutes.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.spin_minutes.setMinimumHeight(38)
+        self.spin_minutes.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
         self.btn_minus = QPushButton("−")
         self.btn_minus.setFixedSize(44, 38)
-        self.btn_plus = QPushButton("+")
+        self.btn_plus = QPushButton("+") 
         self.btn_plus.setFixedSize(44, 38)
         self.btn_set = QPushButton(_("Definir"))
         self.btn_set.setMinimumHeight(38)
@@ -397,11 +399,11 @@ class MainWindow(QMainWindow):
         for btn in (self.btn_output, self.btn_close_output, self.btn_refresh_monitors):
             btn.setStyleSheet(s["monitor_btn"])
 
-        self.combo_monitors.setStyleSheet(s["spinbox"])
+        self.combo_monitors.setStyleSheet(s["combo"])
 
         self.btn_attention.setStyleSheet(s["attention_btn"])
         self.btn_dark_mode.setStyleSheet(s["toggle_btn"])
-        self.combo_language.setStyleSheet(s["toggle_btn"])
+        self.combo_language.setStyleSheet(s["combo"])
         self.label_clock.setStyleSheet(s["footer"])
         self.label_date.setStyleSheet(s["footer"])
 
