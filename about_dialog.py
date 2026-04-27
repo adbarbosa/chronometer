@@ -8,13 +8,13 @@ from PyQt6.QtWidgets import (
     QPushButton,
 )
 from PyQt6.QtCore import Qt, QUrl
-from PyQt6.QtGui import QIcon, QPixmap, QDesktopServices
+from PyQt6.QtGui import QIcon, QDesktopServices
 from pathlib import Path
 
 from chronometer import __version__
 
 
-ICON_PATH = Path(__file__).resolve().parent / "icon" / "chronometer-stopwatch-svgrepo-com.ico"
+ICON_PATH = Path(__file__).resolve().parent / "icon" / "chronometer-stopwatch-svgrepo-com.svg"
 
 # URL do repositório
 GITHUB_URL = "https://github.com/adbarbosa/chronometer"
@@ -45,8 +45,7 @@ class AboutDialog(QDialog):
         header_layout.setSpacing(15)
 
         icon_label = QLabel()
-        pixmap = QPixmap(str(ICON_PATH))
-        pixmap = pixmap.scaledToWidth(64, Qt.TransformationMode.SmoothTransformation)
+        pixmap = QIcon(str(ICON_PATH)).pixmap(64, 64)
         icon_label.setPixmap(pixmap)
         icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         header_layout.addWidget(icon_label)
