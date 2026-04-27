@@ -5,16 +5,18 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QMainWindow,
+    QMenu,
     QPushButton,
     QSpinBox,
     QVBoxLayout,
     QWidget,
 )
-from PyQt6.QtCore import QDateTime, QTimer, Qt
-from PyQt6.QtGui import QIcon
+from PyQt6.QtCore import QDateTime, QTimer, Qt, QUrl
+from PyQt6.QtGui import QIcon, QDesktopServices
 from pathlib import Path
 
 from chronometer import __version__
+from chronometer.about_dialog import AboutDialog
 from chronometer.config import ConfigManager
 from chronometer.i18n import setup_i18n, get_current_language
 from chronometer.theme import CLOCK_INTERVAL, COUNTDOWN_INTERVAL, build_control_styles
@@ -56,6 +58,7 @@ class MainWindow(QMainWindow):
         self.output_window = TimerWindow()
 
         self._build_ui()
+        self._build_menu_bar()
         self._connect_signals()
         self._apply_theme()
         self._update_displays()
@@ -198,6 +201,33 @@ class MainWindow(QMainWindow):
         for button, minutes in self.preset_buttons:
             button.clicked.connect(lambda _checked=False, m=minutes: self.load_preset(m))
 
+    def _build_menu_bar(self) -> None:
+        """Constrói a barra de menu com opção de Ajuda."""
+        menubar = self.menuBar()
+        
+        # Menu Ajuda
+        help_menu = menubar.addMenu(_("Ajuda"))
+        
+        # Ação: Sobre
+        self.about_action = help_menu.addAction(_("Sobre Chronometer"))
+        self.about_action.triggered.connect(self.show_about_dialog)
+        
+        # Separador
+        help_menu.addSeparator()
+        
+        # Ação: Website
+        self.website_action = help_menu.addAction(_("Visitar Website"))
+        self.website_action.triggered.connect(self._open_website)
+
+    def show_about_dialog(self) -> None:
+        """Mostra o diálogo 'Sobre Chronometer'."""
+        dialog = AboutDialog(self)
+        dialog.exec()
+
+    def _open_website(self) -> None:
+        """Abre o website do projeto no navegador."""
+        QDesktopServices.openUrl(QUrl("https://github.com/adbarbosa/chronometer"))
+
     def _populate_monitors(self) -> None:
         self.combo_monitors.clear()
         screens = QApplication.screens()
@@ -307,6 +337,10 @@ class MainWindow(QMainWindow):
     def _retranslate_ui(self) -> None:
         """Atualiza todos os textos da UI para o idioma atual."""
         self.setWindowTitle(f"Chronometer v{__version__} - {_('Control')}")
+        
+        # Menu e ações
+        self.about_action.setText(_("Sobre Chronometer"))
+        self.website_action.setText(_("Visitar Website"))
         
         # Botões de monitor
         self.btn_output.setText(_("Abrir"))

@@ -1,6 +1,6 @@
 # Chronometer
 
-**Versão:** 0.4.1
+**Versão:** 0.4.2
 
 Cronómetro para apresentações e talks, com painel de controlo e janela de output para segundo monitor. Suporta múltiplos idiomas (pt-PT, en-US).
 
@@ -15,6 +15,7 @@ Cronómetro para apresentações e talks, com painel de controlo e janela de out
 - **Texto responsivo** — o timer e relógio ajustam-se à resolução do monitor
 - **Fechar output clicando na hora** — esconde a janela sem fechar a aplicação
 - **Internacionalização** — Suporte para português (Portugal) e inglês (EUA)
+- **Menu Ajuda** — Acesso a informação do projeto e link para GitHub
 
 ## Requisitos
 
@@ -30,10 +31,11 @@ pip install PyQt6 polib
 
 ```
 chronometer/
-├── __init__.py              # Package marker (v0.3.0)
+├── __init__.py              # Package marker (v0.4.2)
 ├── __main__.py              # Entry point (python -m chronometer)
 ├── app.py                   # Cria QApplication, setup i18n
-├── main_window.py           # Painel de controlo
+├── main_window.py           # Painel de controlo + menu Ajuda
+├── about_dialog.py          # Diálogo Sobre Chronometer (v0.4.2)
 ├── timer_window.py          # Janela de output (segundo monitor)
 ├── theme.py                 # Cores, fontes, tamanhos, stylesheets
 ├── i18n/                    # Internacionalização

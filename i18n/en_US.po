@@ -75,3 +75,52 @@ msgstr "Output closed."
 #: timer_window.py
 msgid "Timer Output"
 msgstr "Timer Output"
+
+#: main_window.py
+msgid "Ajuda"
+msgstr "Help"
+
+#: main_window.py
+msgid "Sobre Chronometer"
+msgstr "About Chronometer"
+
+#: main_window.py
+msgid "Visitar Website"
+msgstr "Visit Website"
+
+#: about_dialog.py
+msgid "Sobre"
+msgstr "About"
+
+#: about_dialog.py
+msgid "Cronómetro para Apresentações"
+msgstr "Timer for Presentations"
+
+#: about_dialog.py
+msgid "Um cronómetro simples e eficiente para gerir tempos de apresentações com painel de controlo e visor em segundo monitor."
+msgstr "A simple and efficient timer to manage presentation times with control panel and display on a second monitor."
+
+#: about_dialog.py
+msgid "Funcionalidades:"
+msgstr "Features:"
+
+#: about_dialog.py
+msgid "Presets de duração (10, 15, 20, 25, 30, 35, 45, 60 minutos)"
+msgstr "Duration presets (10, 15, 20, 25, 30, 35, 45, 60 minutes)"
+
+#: about_dialog.py
+msgid "Suporte a múltiplos monitores com fullscreen"
+msgstr "Support for multiple monitors with fullscreen"
+
+#: about_dialog.py
+msgid "Avisos visuais por cor (branco → laranja → vermelho)"
+msgstr "Visual warnings by color (white → orange → red)"
+
+#: about_dialog.py
+msgid "Internacionalização (Português e Inglês)"
+msgstr "Internationalization (Portuguese and English)"
+
+#: about_dialog.py
+msgid "Abrir no GitHub"
+msgstr "Open on GitHub"
+
