@@ -2,15 +2,13 @@ import sys
 from pathlib import Path
 
 from PyQt6.QtWidgets import QApplication
-from PyQt6.QtGui import QIcon
+from PyQt6.QtGui import QIcon, QGuiApplication
 
 from chronometer import __version__
 from chronometer.config import ConfigManager
 from chronometer.i18n import setup_i18n
 from chronometer.main_window import MainWindow
-
-
-ICON_PATH = Path(__file__).resolve().parent / "icon" / "chronometer-stopwatch-svgrepo-com.ico"
+from chronometer.icon_manager import get_app_icon
 
 
 def main() -> None:
@@ -28,7 +26,12 @@ def main() -> None:
     app = QApplication(sys.argv)
     app.setApplicationName("Chronometer")
     app.setApplicationVersion(__version__)
-    app.setWindowIcon(QIcon(str(ICON_PATH)))
+    app.setWindowIcon(get_app_icon())
+    
+    # FIX PARA LINUX/WAYLAND: Definir desktop file name para associar o ícone
+    # Isso é CRUCIAL para o Wayland mostrar o ícone corretamente
+    QGuiApplication.setDesktopFileName("adbtech.chronometer")
+    
     window = MainWindow()
     window.show()
     sys.exit(app.exec())

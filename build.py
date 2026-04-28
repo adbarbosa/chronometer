@@ -22,6 +22,7 @@ def build():
     datas = [
         ("i18n/locales", "i18n/locales"),
         ("icon", "icon"),
+        ("chronometer.desktop", "."),
     ]
     
     # Constrói os argumentos do PyInstaller

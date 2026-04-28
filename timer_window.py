@@ -1,6 +1,7 @@
 from PyQt6.QtWidgets import QLabel, QVBoxLayout, QWidget
 from PyQt6.QtCore import QDateTime, QTimer, Qt
-from PyQt6.QtGui import QMouseEvent
+from PyQt6.QtGui import QMouseEvent, QIcon
+from pathlib import Path
 
 from chronometer.theme import (
     CLOCK_INTERVAL, FLASH_INTERVAL_MS, FLASH_MAX_TICKS,
@@ -9,6 +10,7 @@ from chronometer.theme import (
     OUTPUT_CLOCK_RATIO, OUTPUT_CLOCK_MIN_PX,
     output_bg_style, output_clock_style, output_flash_bg, output_time_style,
 )
+from chronometer.icon_manager import get_app_icon
 
 
 class TimerWindow(QWidget):
@@ -16,6 +18,7 @@ class TimerWindow(QWidget):
 
     def __init__(self):
         super().__init__()
+        self.setWindowIcon(get_app_icon())
         self.setStyleSheet(output_bg_style())
 
         self.flash_timer = QTimer(self)

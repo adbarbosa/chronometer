@@ -22,9 +22,7 @@ from chronometer.config import ConfigManager
 from chronometer.i18n import setup_i18n, get_current_language
 from chronometer.theme import CLOCK_INTERVAL, COUNTDOWN_INTERVAL, build_control_styles
 from chronometer.timer_window import TimerWindow
-
-
-ICON_PATH = Path(__file__).resolve().parent / "icon" / "chronometer-stopwatch-svgrepo-com.ico"
+from chronometer.icon_manager import get_app_icon
 
 # Mapeamento de códigos de idioma para nomes legíveis
 LANGUAGE_NAMES = {
@@ -39,7 +37,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setFixedSize(520, 520)
-        self.setWindowIcon(QIcon(str(ICON_PATH)))
+        self.setWindowIcon(get_app_icon())
 
         self.remaining_seconds = 0
         self.loaded_preset_seconds = 0
