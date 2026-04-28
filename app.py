@@ -19,6 +19,12 @@ def main() -> None:
     saved_lang = ConfigManager.get_language()
     setup_i18n(saved_lang)
     
+    # FIX PARA WINDOWS: Definir AppID para que o ícone apareça na barra de tarefas
+    import ctypes
+    if sys.platform == 'win32':
+        app_id = "adbtech.chronometer"
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
+    
     app = QApplication(sys.argv)
     app.setApplicationName("Chronometer")
     app.setApplicationVersion(__version__)
