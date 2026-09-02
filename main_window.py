@@ -239,7 +239,9 @@ class MainWindow(QMainWindow):
             )
         if len(screens) > 1:
             self.combo_monitors.setCurrentIndex(1)
-        self.label_status.setText(_(f"{len(screens)} monitor(es) detectado(s)"))
+        self.label_status.setText(
+            _("{count} monitor(es) detectado(s)").format(count=len(screens))
+        )
 
     def _load_saved_monitor_preference(self) -> None:
         """Carrega e seleciona o último monitor usado, com fallback."""
@@ -267,7 +269,11 @@ class MainWindow(QMainWindow):
         geometry = screen.geometry()
         self.output_window.move(geometry.left(), geometry.top())
         self.output_window.showFullScreen()
-        self.label_status.setText(_(f"Aberto em: {self.combo_monitors.currentText()}"))
+        self.label_status.setText(
+            _("Aberto em: {monitor_name}").format(
+                monitor_name=self.combo_monitors.currentText()
+            )
+        )
         
         # Guardar preferência do monitor
         ConfigManager.save_monitor_index(idx)
@@ -367,7 +373,9 @@ class MainWindow(QMainWindow):
         
         # Atualizar status dos monitores
         screens = QApplication.screens()
-        self.label_status.setText(_(f"{len(screens)} monitor(es) detectado(s)"))
+        self.label_status.setText(
+            _("{count} monitor(es) detectado(s)").format(count=len(screens))
+        )
 
     def _apply_theme(self) -> None:
         s = build_control_styles(self.dark_mode)

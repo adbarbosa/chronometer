@@ -1,8 +1,7 @@
 import sys
-from pathlib import Path
 
 from PyQt6.QtWidgets import QApplication
-from PyQt6.QtGui import QIcon, QGuiApplication
+from PyQt6.QtGui import QGuiApplication
 
 from chronometer import __version__
 from chronometer.config import ConfigManager
@@ -30,7 +29,7 @@ def main() -> None:
     
     # FIX PARA LINUX/WAYLAND: Definir desktop file name para associar o ícone
     # Isso é CRUCIAL para o Wayland mostrar o ícone corretamente
-    QGuiApplication.setDesktopFileName("adbtech.chronometer")
+    QGuiApplication.setDesktopFileName("chronometer")
     
     window = MainWindow()
     window.show()

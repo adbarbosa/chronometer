@@ -3,6 +3,8 @@
 
 import json
 import sys
+import tempfile
+from functools import wraps
 from pathlib import Path
 
 # Adicionar caminho ao módulo
@@ -11,6 +13,25 @@ sys.path.insert(0, str(Path(__file__).parent))
 from config import ConfigManager
 
 
+def isolated_config_test(test_function):
+    """Executa cada teste com um ficheiro de configuração temporário."""
+    @wraps(test_function)
+    def wrapper(*args, **kwargs):
+        original_dir = ConfigManager.CONFIG_DIR
+        original_file = ConfigManager.CONFIG_FILE
+        with tempfile.TemporaryDirectory() as temp_dir:
+            ConfigManager.CONFIG_DIR = Path(temp_dir)
+            ConfigManager.CONFIG_FILE = ConfigManager.CONFIG_DIR / "config.json"
+            try:
+                return test_function(*args, **kwargs)
+            finally:
+                ConfigManager.CONFIG_DIR = original_dir
+                ConfigManager.CONFIG_FILE = original_file
+
+    return wrapper
+
+
+@isolated_config_test
 def test_save_and_load():
     """Teste: guardar e carregar preferência de monitor."""
     print("🧪 Teste 1: Guardar e carregar preferência de monitor")
@@ -23,6 +44,7 @@ def test_save_and_load():
     print(f"  ✅ Guardou índice 2, carregou: {loaded}")
 
 
+@isolated_config_test
 def test_default_value():
     """Teste: valor por defeito."""
     print("\n🧪 Teste 2: Obter valor por defeito")
@@ -36,6 +58,7 @@ def test_default_value():
     print(f"  ✅ Valor por defeito funcionando: {loaded}")
 
 
+@isolated_config_test
 def test_type_conversion():
     """Teste: conversão de tipo."""
     print("\n🧪 Teste 3: Conversão de tipo (string para int)")
@@ -49,11 +72,12 @@ def test_type_conversion():
     print(f"  ✅ Conversão bem-sucedida: string '3' → int {loaded}")
 
 
+@isolated_config_test
 def test_config_file_location():
     """Teste: localização do ficheiro."""
     print("\n🧪 Teste 4: Localização do ficheiro de configuração")
     
-    expected_dir = Path.home() / ".chronometer"
+    expected_dir = ConfigManager.CONFIG_DIR
     expected_file = expected_dir / "config.json"
     
     assert ConfigManager.CONFIG_DIR == expected_dir, f"Diretório incorreto: {ConfigManager.CONFIG_DIR}"
@@ -69,6 +93,7 @@ def test_config_file_location():
         print(f"  ✅ Conteúdo do ficheiro: {content}")
 
 
+@isolated_config_test
 def test_generic_get_save():
     """Teste: métodos genéricos get/save."""
     print("\n🧪 Teste 5: Métodos genéricos get/save")

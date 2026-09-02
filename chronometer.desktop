@@ -2,8 +2,8 @@
 Version=1.0
 Name=Chronometer
 Comment=Chronometer application for timing events
-Exec=chronometer
-Icon=chronometer
+Exec=Chronometer
+Icon=chronometer-stopwatch-svgrepo-com
 Terminal=false
 Type=Application
 Categories=Utility;Clock;

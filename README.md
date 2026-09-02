@@ -18,7 +18,7 @@ Cronómetro para apresentações e talks, com painel de controlo e janela de out
 
 - **Presets de duração** — 10, 15, 20, 25, 30, 35, 45 e 60 minutos
 - **Tempo manual** — campo editável com botões +/− (1 a 180 minutos)
-- **Avisos visuais por cor** — branco (normal), laranja (< 5 min), vermelho (< 2 min)
+- **Avisos visuais por cor** — branco (normal), laranja (< 1 min), vermelho (< 0 min)
 - **Call Attention** — efeito flash vermelho/branco no segundo monitor
 - **Seleção de monitor** — lista todos os monitores ligados, escolhe onde mostrar o output
 - **Dark / Light mode** — alternância com um clique
@@ -35,6 +35,7 @@ Cronómetro para apresentações e talks, com painel de controlo e janela de out
 
 ### Desenvolvimento (Traduções e Build)
 - polib (compilação de traduções)
+- pytest (execução dos testes)
 - pyinstaller ou nuitka (build de executáveis)
 
 ### Instalação
@@ -43,7 +44,7 @@ Cronómetro para apresentações e talks, com painel de controlo e janela de out
 pip install PyQt6
 
 # Para desenvolvimento completo (incluindo traduções e build)
-pip install PyQt6 polib pyinstaller
+pip install PyQt6 polib pyinstaller pytest
 ```
 
 ## Estrutura do Projeto
@@ -150,6 +151,20 @@ pip install nuitka
 python3 -m nuitka --onefile --noconsole app.py
 ```
 
+## Configuração
+
+As preferências são guardadas em `~/.chronometer/config.json`:
+
+| Chave | Valores | Predefinição |
+|---|---|---|
+| `last_monitor_index` | Índice inteiro do monitor | `1` |
+| `language` | `pt_PT`, `en_US` ou `null` | `null` |
+| `dark_mode` | `true` ou `false` | `false` |
+
+O índice do monitor é validado no arranque e é usado um fallback quando o monitor guardado já não existe.
+
+Os testes usam um diretório temporário e não devem alterar este ficheiro.
+
 ## Internacionalização (i18n)
 
 Como as Traduções Funcionam
@@ -192,17 +207,63 @@ Como as Traduções Funcionam
    LANG=xx_YY.UTF-8 python3 -m chronometer
    ```
 
-### Como as Traduções Funcionam
-
-- **Detecção automática:** A aplicação detecta o idioma do sistema via `locale.getdefaultlocale()`
-- **Fallback:** Se o idioma não for suportado, volta para pt_PT
-- **Inicialização:** Em `app.py`, `setup_i18n()` é chamado antes de criar a UI
-
 ### Ficheiros Chave
 
 - `chronometer/i18n/__init__.py` — `setup_i18n(lang)` configura gettext
 - `chronometer/i18n/compile.py` — Compila `.po` → `.mo` usando polib
 - `chronometer/i18n/test_i18n.py` — Testa se as traduções carregam corretamente
+
+Mensagens com valores variáveis usam placeholders, por exemplo `{count}` e `{monitor_name}`. O template deve ser traduzido antes de aplicar `.format()`.
+
+## Testes
+
+Na raiz do projeto:
+
+```bash
+python test_config.py
+PYTHONPATH=.. python i18n/test_i18n.py
+```
+
+Quando `pytest` estiver instalado, os testes podem ser descobertos a partir da raiz do pacote-pai:
+
+```bash
+PYTHONPATH=.. pytest -q
+```
+
+## Instalação através do ficheiro desktop (Linux)
+
+O ficheiro `chronometer.desktop` assume que o executável `Chronometer` está disponível no `PATH`.
+
+Para uma instalação apenas do utilizador:
+
+```bash
+mkdir -p ~/.local/bin ~/.local/share/applications ~/.local/share/icons/hicolor/scalable/apps
+cp dist/Chronometer ~/.local/bin/Chronometer
+cp chronometer.desktop ~/.local/share/applications/
+cp icon/chronometer-stopwatch-svgrepo-com.svg ~/.local/share/icons/hicolor/scalable/apps/
+update-desktop-database ~/.local/share/applications 2>/dev/null || true
+```
+
+Se `~/.local/bin` não estiver no `PATH`, altere `Exec` no ficheiro desktop para o caminho absoluto do executável.
+
+O ficheiro desktop e o ícone não são instalados automaticamente pelo build.
+
+## Contribuição
+
+1. Criar e ativar um ambiente virtual.
+2. Instalar as dependências de runtime e desenvolvimento.
+3. Executar os testes antes e depois das alterações.
+4. Ao alterar textos traduzíveis, atualizar os ficheiros `.po` e recompilar os `.mo`.
+5. Validar o build no sistema operativo alvo.
+6. Manter alterações focadas e atualizar o README quando o comportamento mudar.
+
+## Problemas conhecidos
+
+- O countdown continua a mostrar tempo negativo depois de `00:00` até ser parado manualmente.
+- O build PyInstaller deve ser executado no sistema operativo alvo.
+- No Linux, o PyInstaller ignora o parâmetro `.ico` como ícone do executável; a integração visual depende do `.desktop` e da instalação do ícone.
+- A janela de output requer uma sessão gráfica e o comportamento com múltiplos monitores depende do Qt, do compositor e da sessão X11/Wayland.
+- O aviso de `libtiff.so.5` pode aparecer durante o build quando essa biblioteca não está instalada no sistema.
 
 ## Personalização
 

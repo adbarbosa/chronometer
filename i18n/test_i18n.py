@@ -4,7 +4,7 @@ Script de teste do sistema i18n da aplicação Chronometer.
 Valida que as traduções são carregadas corretamente em diferentes idiomas.
 """
 
-import gettext
+import builtins
 import sys
 from pathlib import Path
 
@@ -29,12 +29,9 @@ def test_language(lang: str, expected_translations: dict) -> bool:
     print(f"Testando {lang.upper()}")
     print('='*60)
     
-    # Resetar gettext
-    gettext._translations = {}
-    
     # Setup de i18n
     setup_i18n(lang)
-    _ = gettext.gettext
+    _ = builtins.__dict__["_"]
     
     all_passed = True
     
@@ -80,6 +77,8 @@ def main():
         "Modo Claro": "Modo Claro",
         "Control": "Controlo",
         "Output fechado.": "Output fechado.",
+        "{count} monitor(es) detectado(s)": "{count} monitor(es) detectado(s)",
+        "Aberto em: {monitor_name}": "Aberto em: {monitor_name}",
     }
     
     # Testes en_US
@@ -94,6 +93,8 @@ def main():
         "Modo Claro": "Light Mode",
         "Control": "Control",
         "Output fechado.": "Output closed.",
+        "{count} monitor(es) detectado(s)": "{count} monitor(s) detected",
+        "Aberto em: {monitor_name}": "Opened in: {monitor_name}",
     }
     
     pt_passed = test_language("pt_PT", pt_pt_tests)

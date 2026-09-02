@@ -1,8 +1,9 @@
 """Gestor de configurações persistentes para Chronometer."""
 
 import json
+import os
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 
 class ConfigManager:
@@ -28,7 +29,7 @@ class ConfigManager:
         cls.CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 
     @classmethod
-    def _load_config(cls) -> dict:
+    def _load_config(cls) -> dict[str, Any]:
         """Carrega configurações do ficheiro JSON."""
         cls._ensure_config_dir()
 
@@ -38,24 +39,34 @@ class ConfigManager:
         try:
             with open(cls.CONFIG_FILE, "r", encoding="utf-8") as f:
                 config = json.load(f)
+                if not isinstance(config, dict):
+                    raise ValueError("o conteúdo não é um objeto JSON")
                 # Mesclar com defaults para garantir que chaves novas existem
                 defaults = cls.DEFAULTS.copy()
                 defaults.update(config)
                 return defaults
-        except (json.JSONDecodeError, IOError) as e:
+        except (json.JSONDecodeError, ValueError, IOError) as e:
             print(f"⚠️ Erro ao carregar configurações: {e}. Usando defaults.")
             return cls.DEFAULTS.copy()
 
     @classmethod
-    def _save_config(cls, config: dict) -> None:
+    def _save_config(cls, config: dict[str, Any]) -> None:
         """Guarda configurações em ficheiro JSON."""
         cls._ensure_config_dir()
+        temporary_file = cls.CONFIG_FILE.with_suffix(".json.tmp")
 
         try:
-            with open(cls.CONFIG_FILE, "w", encoding="utf-8") as f:
+            with open(temporary_file, "w", encoding="utf-8") as f:
                 json.dump(config, f, indent=2, ensure_ascii=False)
-        except IOError as e:
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(temporary_file, cls.CONFIG_FILE)
+        except (IOError, OSError) as e:
             print(f"⚠️ Erro ao guardar configurações: {e}")
+            try:
+                temporary_file.unlink()
+            except FileNotFoundError:
+                pass
 
     @classmethod
     def get(cls, key: str, default: Any = None) -> Any:
