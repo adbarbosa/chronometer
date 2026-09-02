@@ -41,11 +41,13 @@ Cronómetro para apresentações e talks, com painel de controlo e janela de out
 ### Instalação
 ```bash
 # Apenas para executar a aplicação
-pip install PyQt6
+python3 -m pip install PyQt6
 
 # Para desenvolvimento completo (incluindo traduções e build)
-pip install PyQt6 polib pyinstaller pytest
+python3 -m pip install PyQt6 polib pyinstaller pytest
 ```
+
+No Windows, pode utilizar `py -3 -m pip` em vez de `python3 -m pip`.
 
 ## Estrutura do Projeto
 
@@ -76,25 +78,41 @@ chronometer/
 
 ## Executar
 
+As instruções seguintes assumem que o código foi obtido para uma pasta que contém a pasta `chronometer/`.
+É necessário ter Python 3.10 ou superior e PyQt6 instalados.
+
 ### Linux
 
 ```bash
-cd /caminho/para/o/directorio_que_contem_chronometer
+cd /caminho/para/o/directorio-que-contem-chronometer
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install PyQt6
 python3 -m chronometer
 ```
 
 ### Windows
 
 ```cmd
-cd C:\caminho\para\o\directorio_que_contem_chronometer
-python3 -m chronometer
+cd C:\caminho\para\o\directorio-que-contem-chronometer
+py -3 -m venv .venv
+.venv\Scripts\activate
+py -3 -m pip install PyQt6
+py -3 -m chronometer
 ```
 
-> **Nota:** o comando deve ser executado a partir do directório que **contém** a pasta `chronometer/`, não de dentro dela. O `__main__.py` também suporta execução direta no caso de empacotamento ou debug local.
+> **Nota:** `python3 -m chronometer` ou `py -3 -m chronometer` deve ser executado a partir do directório que **contém** a pasta `chronometer/`, não de dentro dela.
+
+Para execução direta durante debug, dentro da pasta `chronometer/`, também pode executar:
+
+```bash
+python3 __main__.py
+```
 
 ## Compilar para Executável
 
-Para compilar a aplicação de forma correta, garantindo que todos os recursos (ícones e traduções) sejam incluídos, utilize o script de build fornecido.
+Para compilar a aplicação de forma correta, garantindo que todos os recursos (ícones, traduções e ficheiro desktop) sejam incluídos, utilize o script `build.py` fornecido.
+O processo oficial não utiliza o ficheiro `Chronometer.spec`.
 
 ### Passo 1: Preparar o ambiente
 
@@ -102,54 +120,68 @@ Para compilar a aplicação de forma correta, garantindo que todos os recursos (
 
 ```bash
 # Linux
-cd chronometer
+cd /caminho/para/o/directorio-que-contem-chronometer/chronometer
 python3 -m venv .venv
 source .venv/bin/activate
-pip install PyQt6 pyinstaller
+python3 -m pip install PyQt6 polib pyinstaller
 
 # Windows (CMD)
-cd chronometer
-python3 -m venv .venv
+cd C:\caminho\para\o\directorio-que-contem-chronometer\chronometer
+py -3 -m venv .venv
 .venv\Scripts\activate
-pip install PyQt6 pyinstaller
-
-# Windows (Git Bash / MINGW64)
-cd chronometer
-python3 -m venv .venv
-source .venv/Scripts/activate
-pip install PyQt6 pyinstaller
+py -3 -m pip install PyQt6 polib pyinstaller
 ```
 
-### Passo 2: Executar o Build
+### Passo 2: Compilar traduções
 
-Execute o script `build.py` dentro da pasta do projeto:
+Este passo só é necessário quando os ficheiros `.po` forem alterados. Deve ser executado dentro da pasta `chronometer/`:
+
+```bash
+python3 i18n/compile.py
+```
+
+No Windows:
+
+```cmd
+py -3 i18n\compile.py
+```
+
+### Passo 3: Gerar o executável
+
+Dentro da pasta `chronometer/`, execute:
 
 ```bash
 python3 build.py
 ```
 
-O executável final será gerado na pasta `dist/`.
+No Windows:
 
-### Passo 2.5: Compilar Traduções (Opcional)
-
-Se alterou traduções, certifique-se de que estão compiladas antes de gerar o executável:
-
-```bash
-# Dentro da pasta chronometer/
-python3 i18n/compile.py
+```cmd
+py -3 build.py
 ```
 
-O script `build.py` incluirá automaticamente os ficheiros `.mo` gerados no executável.
+O executável será criado na pasta `dist/`:
 
-### Alternativa: Nuitka
+- Linux: `dist/Chronometer`
+- Windows: `dist/Chronometer.exe`
+
+O script inclui automaticamente os ficheiros `.mo`, os ícones e o ficheiro `chronometer.desktop` existentes no momento do build.
+
+### Executar o executável
+
+No Linux:
 
 ```bash
-cd /caminho/para/o/directorio_que_contem_chronometer
-python3 -m venv .venv
-source .venv/bin/activate
-pip install nuitka
-python3 -m nuitka --onefile --noconsole app.py
+./dist/Chronometer
 ```
+
+No Windows:
+
+```cmd
+dist\Chronometer.exe
+```
+
+O build deve ser executado no sistema operativo alvo. O ficheiro `Chronometer.spec` contém configuração gerada localmente e não é utilizado pelo processo oficial.
 
 ## Configuração
 
@@ -241,6 +273,7 @@ mkdir -p ~/.local/bin ~/.local/share/applications ~/.local/share/icons/hicolor/s
 cp dist/Chronometer ~/.local/bin/Chronometer
 cp chronometer.desktop ~/.local/share/applications/
 cp icon/chronometer-stopwatch-svgrepo-com.svg ~/.local/share/icons/hicolor/scalable/apps/
+chmod +x ~/.local/bin/Chronometer
 update-desktop-database ~/.local/share/applications 2>/dev/null || true
 ```
 
