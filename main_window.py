@@ -9,10 +9,11 @@ from PyQt6.QtWidgets import (
     QMenu,
     QPushButton,
     QSpinBox,
+    QStyle,
     QVBoxLayout,
     QWidget,
 )
-from PyQt6.QtCore import QDateTime, QTimer, Qt, QUrl
+from PyQt6.QtCore import QDateTime, QTimer, Qt, QUrl, QSize
 from PyQt6.QtGui import QIcon, QDesktopServices
 from pathlib import Path
 
@@ -80,7 +81,11 @@ class MainWindow(QMainWindow):
         monitor_row.setSpacing(8)
         self.combo_monitors = QComboBox()
         self.combo_monitors.setMinimumHeight(32)
-        self.btn_refresh_monitors = QPushButton("↻")
+        self.btn_refresh_monitors = QPushButton()
+        self.btn_refresh_monitors.setIcon(
+            self.style().standardIcon(QStyle.StandardPixmap.SP_BrowserReload)
+        )
+        self.btn_refresh_monitors.setIconSize(QSize(18, 18))
         self.btn_output = QPushButton(_("Abrir"))
         self.btn_close_output = QPushButton(_("Fechar"))
         self.btn_refresh_monitors.setFixedSize(36, 36)
@@ -402,8 +407,11 @@ class MainWindow(QMainWindow):
         for btn in (self.btn_start, self.btn_stop, self.btn_reset):
             btn.setStyleSheet(s["control_btn"])
 
-        for btn in (self.btn_output, self.btn_close_output, self.btn_refresh_monitors):
+        for btn in (self.btn_output, self.btn_close_output):
             btn.setStyleSheet(s["monitor_btn"])
+        self.btn_refresh_monitors.setStyleSheet(
+            s["monitor_btn"] + "QPushButton { padding: 0px; }"
+        )
 
         self.combo_monitors.setStyleSheet(s["combo"])
 
