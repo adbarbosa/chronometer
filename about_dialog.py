@@ -160,7 +160,7 @@ class AboutDialog(QDialog):
 
         # Textos das features
         features_text = {
-            "feature1": _("Presets de duração (10, 15, 20, 25, 30, 35, 45, 60 minutos)"),
+            "feature1": _("Presets de duração (1 a 5 minutos, depois 10, 15, 20, 25, 30, 45 e 60 minutos)"),
             "feature2": _("Suporte a múltiplos monitores com fullscreen"),
             "feature3": _("Avisos visuais por cor (branco → laranja → vermelho)"),
             "feature4": _("Internacionalização (Português e Inglês)"),

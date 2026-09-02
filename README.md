@@ -1,6 +1,6 @@
 # Chronometer
 
-**Versão:** 0.4.6
+**Versão:** 0.4.7
 
 Cronómetro para apresentações e talks, com painel de controlo e janela de output para segundo monitor. Suporta múltiplos idiomas (pt-PT, en-US).
 
@@ -16,7 +16,7 @@ Cronómetro para apresentações e talks, com painel de controlo e janela de out
 
 ## Funcionalidades
 
-- **Presets de duração** — 10, 15, 20, 25, 30, 35, 45 e 60 minutos
+- **Presets de duração** — 1 a 5 minutos, depois 10, 15, 20, 25, 30, 45 e 60 minutos
 - **Tempo manual** — campo editável com botões +/− (1 a 180 minutos)
 - **Avisos visuais por cor** — branco (normal), laranja (< 1 min), vermelho (< 0 min)
 - **Call Attention** — efeito flash vermelho/branco no segundo monitor

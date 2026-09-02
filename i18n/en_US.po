@@ -105,8 +105,8 @@ msgid "Funcionalidades:"
 msgstr "Features:"
 
 #: about_dialog.py
-msgid "Presets de duração (10, 15, 20, 25, 30, 35, 45, 60 minutos)"
-msgstr "Duration presets (10, 15, 20, 25, 30, 35, 45, 60 minutes)"
+msgid "Presets de duração (1 a 5 minutos, depois 10, 15, 20, 25, 30, 45 e 60 minutos)"
+msgstr "Duration presets (1 to 5 minutes, then 10, 15, 20, 25, 30, 45, and 60 minutes)"
 
 #: about_dialog.py
 msgid "Suporte a múltiplos monitores com fullscreen"

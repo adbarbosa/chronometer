@@ -36,7 +36,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setFixedSize(520, 520)
+        self.setFixedSize(680, 520)
         self.setWindowIcon(get_app_icon())
 
         self.remaining_seconds = 0
@@ -102,13 +102,13 @@ class MainWindow(QMainWindow):
         presets_layout.setHorizontalSpacing(8)
         presets_layout.setVerticalSpacing(8)
 
-        preset_minutes = [10, 15, 20, 25, 30, 35, 45, 60]
+        preset_minutes = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 45, 60]
         self.preset_buttons = []
         for index, minutes in enumerate(preset_minutes):
             button = QPushButton(f"{minutes}{_(" min")}")
             button.setMinimumHeight(38)
-            row = index // 4
-            col = index % 4
+            row = index // 6
+            col = index % 6
             presets_layout.addWidget(button, row, col)
             self.preset_buttons.append((button, minutes))
 
