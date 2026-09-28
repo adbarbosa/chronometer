@@ -1,90 +1,90 @@
 # Chronometer
 
-**Versão:** 0.5.0
+**Version:** 0.5.0
 
-Cronómetro para apresentações e talks, com painel de controlo e janela de output para segundo monitor. Suporta múltiplos idiomas (pt-PT, en-US).
+A timer for presentations and talks, with a control panel and an output window for a second monitor. Supports multiple languages (pt-PT, en-US).
 
-## Índice
-- [Funcionalidades](#funcionalidades)
-- [Requisitos](#requisitos)
-- [Estrutura do Projeto](#estrutura-do-projeto)
-- [Executar](#executar)
-- [Compilar para Executável](#compilar-para-executável)
-- [Internacionalização (i18n)](#internacionalização-i18n)
-- [Personalização](#personalização)
-- [Licença](#licença)
+## Table of Contents
+- [Features](#features)
+- [Requirements](#requirements)
+- [Project Structure](#project-structure)
+- [Running](#running)
+- [Building the Executable](#building-the-executable)
+- [Internationalization (i18n)](#internationalization-i18n)
+- [Customization](#customization)
+- [License](#license)
 
-## Funcionalidades
+## Features
 
-- **Presets de duração** — 1 a 5 minutos, depois 10, 15, 20, 25, 30, 45 e 60 minutos
-- **Tempo manual** — campo editável com botões +/− (1 a 180 minutos)
-- **Avisos visuais por cor** — branco (normal), laranja (< 1 min), vermelho (< 0 min)
-- **Call Attention** — efeito flash vermelho/branco no segundo monitor
-- **Seleção de monitor** — lista todos os monitores ligados, escolhe onde mostrar o output
-- **Dark / Light mode** — alternância com um clique
-- **Texto responsivo** — o timer e relógio ajustam-se à resolução do monitor
-- **Fechar output clicando na hora** — esconde a janela sem fechar a aplicação
-- **Internacionalização** — Suporte para português (Portugal) e inglês (EUA)
-- **Menu Ajuda** — Acesso a informação do projeto e link para GitHub
+- **Duration presets** — 1 to 5 minutes, followed by 10, 15, 20, 25, 30, 45, and 60 minutes
+- **Manual duration** — editable field with +/- buttons (1 to 180 minutes)
+- **Color-coded visual warnings** — white (normal), orange (< 1 min), red (< 0 min)
+- **Call Attention** — red/white flashing effect on the second monitor
+- **Monitor selection** — lists all connected monitors and lets you choose where to show the output
+- **Dark / Light mode** — switch with one click
+- **Responsive text** — the timer and clock adapt to the monitor resolution
+- **Close output by clicking the time** — hides the window without closing the application
+- **Internationalization** — supports Portuguese (Portugal) and English (United States)
+- **Help menu** — access to project information and the GitHub link
 
-## Requisitos
+## Requirements
 
 ### Runtime
 - Python 3.10+
 - PyQt6
 
-### Desenvolvimento (Traduções e Build)
-- polib (compilação de traduções)
-- pytest (execução dos testes)
-- pyinstaller ou nuitka (build de executáveis)
+### Development (Translations and Build)
+- polib (translation compilation)
+- pytest (test execution)
+- pyinstaller or nuitka (executable builds)
 
-### Instalação
+### Installation
 ```bash
-# Apenas para executar a aplicação
+# Runtime only
 python3 -m pip install PyQt6
 
-# Para desenvolvimento completo (incluindo traduções e build)
+# Full development setup (including translations and builds)
 python3 -m pip install PyQt6 polib pyinstaller pytest
 ```
 
-No Windows, pode utilizar `py -3 -m pip` em vez de `python3 -m pip`.
+On Windows, you can use `py -3 -m pip` instead of `python3 -m pip`.
 
-## Estrutura do Projeto
+## Project Structure
 
 ```
 chronometer/
 ├── __init__.py              # Package marker (v0.4.2)
 ├── __main__.py              # Entry point (python -m chronometer)
-├── app.py                   # Cria QApplication, setup i18n
-├── main_window.py           # Painel de controlo + menu Ajuda
-├── about_dialog.py          # Diálogo Sobre Chronometer (v0.4.2)
-├── timer_window.py          # Janela de output (segundo monitor)
-├── theme.py                 # Cores, fontes, tamanhos, stylesheets
-├── i18n/                    # Internacionalização
-│   ├── __init__.py          # setup_i18n() - configuração de gettext
-│   ├── compile.py           # Compilador .po → .mo (usa polib)
-│   ├── chronometer.pot      # Template de traduções
-│   ├── pt_PT.po             # Português (Portugal)
-│   ├── en_US.po             # Inglês (EUA)
-│   ├── test_i18n.py         # Testes de i18n
-│   └── locales/             # Compilados (gerados)
+├── app.py                   # Creates QApplication, sets up i18n
+├── main_window.py           # Control panel + Help menu
+├── about_dialog.py          # About Chronometer dialog (v0.4.2)
+├── timer_window.py          # Output window (second monitor)
+├── theme.py                 # Colors, fonts, sizes, stylesheets
+├── i18n/                    # Internationalization
+│   ├── __init__.py          # setup_i18n() - gettext configuration
+│   ├── compile.py           # .po → .mo compiler (uses polib)
+│   ├── chronometer.pot      # Translation template
+│   ├── pt_PT.po             # Portuguese (Portugal)
+│   ├── en_US.po             # English (United States)
+│   ├── test_i18n.py         # i18n tests
+│   └── locales/             # Compiled (generated)
 │       ├── pt_PT/LC_MESSAGES/chronometer.mo
 │       └── en_US/LC_MESSAGES/chronometer.mo
 ├── icon/
-│   ├── chronometer-stopwatch-svgrepo-com.svg  # Asset original
-│   └── chronometer-stopwatch-svgrepo-com.ico  # Ícone para Windows/PyInstaller
+│   ├── chronometer-stopwatch-svgrepo-com.svg  # Original asset
+│   └── chronometer-stopwatch-svgrepo-com.ico  # Icon for Windows/PyInstaller
 └── ...
 ```
 
-## Executar
+## Running
 
-As instruções seguintes assumem que o código foi obtido para uma pasta que contém a pasta `chronometer/`.
-É necessário ter Python 3.10 ou superior e PyQt6 instalados.
+The following instructions assume that the code was obtained in a directory containing the `chronometer/` directory.
+Python 3.10 or later and PyQt6 are required.
 
 ### Linux
 
 ```bash
-cd /caminho/para/o/directorio-que-contem-chronometer
+cd /path/to/directory-containing-chronometer
 python3 -m venv .venv
 source .venv/bin/activate
 python3 -m pip install PyQt6
@@ -94,39 +94,39 @@ python3 -m chronometer
 ### Windows
 
 ```cmd
-cd C:\caminho\para\o\directorio-que-contem-chronometer
+cd C:\path\to\directory-containing-chronometer
 py -3 -m venv .venv
 .venv\Scripts\activate
 py -3 -m pip install PyQt6
 py -3 -m chronometer
 ```
 
-> **Nota:** `python3 -m chronometer` ou `py -3 -m chronometer` deve ser executado a partir do directório que **contém** a pasta `chronometer/`, não de dentro dela.
+> **Note:** `python3 -m chronometer` or `py -3 -m chronometer` must be run from the directory that **contains** the `chronometer/` directory, not from inside it.
 
-Para execução direta durante debug, dentro da pasta `chronometer/`, também pode executar:
+For direct execution during debugging, you can also run the following from inside the `chronometer/` directory:
 
 ```bash
 python3 __main__.py
 ```
 
-## Compilar para Executável
+## Building the Executable
 
-Para compilar a aplicação de forma correta, garantindo que todos os recursos (ícones, traduções e ficheiro desktop) sejam incluídos, utilize o script `build.py` fornecido.
-O processo oficial não utiliza o ficheiro `Chronometer.spec`.
+To build the application correctly and ensure that all resources (icons, translations, and the desktop file) are included, use the provided `build.py` script.
+The official process does not use the `Chronometer.spec` file.
 
-### Passo 1: Preparar o ambiente
+### Step 1: Set up the environment
 
-**Importante:** Todos os comandos devem ser executados **dentro** da pasta `chronometer/`.
+**Important:** All commands must be run **inside** the `chronometer/` directory.
 
 ```bash
 # Linux
-cd /caminho/para/o/directorio-que-contem-chronometer/chronometer
+cd /path/to/directory-containing-chronometer/chronometer
 python3 -m venv .venv
 source .venv/bin/activate
 python3 -m pip install PyQt6 polib pyinstaller
 
 # Windows (CMD)
-cd C:\caminho\para\o\directorio-que-contem-chronometer\chronometer
+cd C:\path\to\directory-containing-chronometer\chronometer
 py -3 -m venv .venv
 .venv\Scripts\activate
 py -3 -m pip install PyQt6 polib pyinstaller
@@ -134,154 +134,154 @@ py -3 -m pip install PyQt6 polib pyinstaller
 
 ### Windows (Git Bash / MINGW64)
 
-No Git Bash, use `/` nos caminhos e `source` para ativar o ambiente virtual:
+In Git Bash, use `/` in paths and `source` to activate the virtual environment:
 
 ```bash
-cd /caminho/para/o/directorio-que-contem-chronometer/chronometer
+cd /path/to/directory-containing-chronometer/chronometer
 py -3 -m venv .venv
 source .venv/Scripts/activate
 py -3 -m pip install PyQt6 polib pyinstaller
 ```
 
-### Passo 2: Compilar traduções
+### Step 2: Compile translations
 
-Este passo só é necessário quando os ficheiros `.po` forem alterados. Deve ser executado dentro da pasta `chronometer/`:
+This step is only required when the `.po` files have changed. It must be run from inside the `chronometer/` directory:
 
 ```bash
 python3 i18n/compile.py
 ```
 
-No Windows:
+On Windows:
 
 ```cmd
 py -3 i18n\compile.py
 ```
 
-### Passo 3: Gerar o executável
+### Step 3: Generate the executable
 
-Dentro da pasta `chronometer/`, execute:
+From inside the `chronometer/` directory, run:
 
 ```bash
 python3 build.py
 ```
 
-No Windows:
+On Windows:
 
 ```cmd
 py -3 build.py
 ```
 
-O executável será criado na pasta `dist/`:
+The executable will be created in the `dist/` directory:
 
 - Linux: `dist/Chronometer`
 - Windows: `dist/Chronometer.exe`
 
-O script inclui automaticamente os ficheiros `.mo`, os ícones e o ficheiro `chronometer.desktop` existentes no momento do build.
+The script automatically includes the `.mo` files, icons, and `chronometer.desktop` file present at build time.
 
-### Limitação de plataforma e arquitetura
+### Platform and architecture limitation
 
-O PyInstaller não faz cross-compilation. O executável é gerado para o sistema operativo e a arquitetura do ambiente Python onde o build é executado. Por exemplo, um build feito em Windows gera um executável Windows e um build feito em Linux gera um executável Linux; para disponibilizar ambas as versões, é necessário executar o build em cada sistema operativo e arquitetura alvo.
+PyInstaller does not perform cross-compilation. The executable is generated for the operating system and architecture of the Python environment where the build is run. For example, a build made on Windows generates a Windows executable and a build made on Linux generates a Linux executable; to provide both versions, the build must be run on each target operating system and architecture.
 
-### Executar o executável
+### Run the executable
 
-No Linux:
+On Linux:
 
 ```bash
 ./dist/Chronometer
 ```
 
-No Windows:
+On Windows:
 
 ```cmd
 dist\Chronometer.exe
 ```
 
-O build deve ser executado no sistema operativo alvo. O ficheiro `Chronometer.spec` contém configuração gerada localmente e não é utilizado pelo processo oficial.
+The build must be run on the target operating system. The `Chronometer.spec` file contains locally generated configuration and is not used by the official process.
 
-## Configuração
+## Configuration
 
-As preferências são guardadas em `~/.chronometer/config.json`:
+Preferences are stored in `~/.chronometer/config.json`:
 
-| Chave | Valores | Predefinição |
+| Key | Values | Default |
 |---|---|---|
-| `last_monitor_index` | Índice inteiro do monitor | `1` |
-| `language` | `pt_PT`, `en_US` ou `null` | `null` |
-| `dark_mode` | `true` ou `false` | `false` |
+| `last_monitor_index` | Integer monitor index | `1` |
+| `language` | `pt_PT`, `en_US`, or `null` | `null` |
+| `dark_mode` | `true` or `false` | `false` |
 
-O índice do monitor é validado no arranque e é usado um fallback quando o monitor guardado já não existe.
+The monitor index is validated at startup, and a fallback is used when the saved monitor no longer exists.
 
-Os testes usam um diretório temporário e não devem alterar este ficheiro.
+Tests use a temporary directory and should not modify this file.
 
-## Internacionalização (i18n)
+## Internationalization (i18n)
 
-Como as Traduções Funcionam
+How Translations Work
 
-- **Detecção automática:** A aplicação detecta o idioma do sistema via `locale.getdefaultlocale()`
-- **Fallback:** Se o idioma não for suportado, volta para pt_PT
-- **Inicialização:** Em `app.py`, `setup_i18n()` é chamado antes de criar a UI
+- **Automatic detection:** The application detects the system language via `locale.getdefaultlocale()`
+- **Fallback:** If the language is not supported, it falls back to pt_PT
+- **Initialization:** In `app.py`, `setup_i18n()` is called before creating the UI
 
-### Idiomas Suportados
+### Supported Languages
 
-- **pt_PT** — Português (Portugal) [padrão]
-- **en_US** — Inglês (EUA)
+- **pt_PT** — Portuguese (Portugal) [default]
+- **en_US** — English (United States)
 
-### Adicionar Novo Idioma
+### Add a New Language
 
-1. **Criar novo ficheiro PO:**
+1. **Create a new PO file:**
    ```bash
    cp chronometer/i18n/chronometer.pot chronometer/i18n/xx_YY.po
    ```
-   Substituir `xx_YY` pelo código do idioma (ex: `pt_BR`, `es_ES`, `fr_FR`)
+   Replace `xx_YY` with the language code (e.g. `pt_BR`, `es_ES`, `fr_FR`)
 
-2. **Traduzir strings no ficheiro .po:**
-   - Abrir com Poedit, Lokalize, ou editor de texto
-   - Preencher `msgstr` com a tradução para cada `msgid`
-   - Exemplo:
+2. **Translate strings in the `.po` file:**
+   - Open it with Poedit, Lokalize, or a text editor
+   - Fill in `msgstr` with the translation for each `msgid`
+   - Example:
      ```po
-     msgid "Abrir"
+     msgid "Open"
      msgstr "Open"
      ```
 
-3. **Compilar traduções:**
+3. **Compile translations:**
    ```bash
    cd chronometer
    python3 i18n/compile.py
    ```
-   Isto gera ficheiros `.mo` em `i18n/locales/{xx_YY}/LC_MESSAGES/chronometer.mo`
+   This generates `.mo` files in `i18n/locales/{xx_YY}/LC_MESSAGES/chronometer.mo`
 
-4. **Testar:**
+4. **Test:**
       ```bash
    LANG=xx_YY.UTF-8 python3 -m chronometer
    ```
 
-### Ficheiros Chave
+### Key Files
 
-- `chronometer/i18n/__init__.py` — `setup_i18n(lang)` configura gettext
-- `chronometer/i18n/compile.py` — Compila `.po` → `.mo` usando polib
-- `chronometer/i18n/test_i18n.py` — Testa se as traduções carregam corretamente
+- `chronometer/i18n/__init__.py` — `setup_i18n(lang)` configures gettext
+- `chronometer/i18n/compile.py` — Compiles `.po` → `.mo` using polib
+- `chronometer/i18n/test_i18n.py` — Tests whether translations load correctly
 
-Mensagens com valores variáveis usam placeholders, por exemplo `{count}` e `{monitor_name}`. O template deve ser traduzido antes de aplicar `.format()`.
+Messages with variable values use placeholders, such as `{count}` and `{monitor_name}`. The template must be translated before applying `.format()`.
 
-## Testes
+## Tests
 
-Na raiz do projeto:
+From the project root:
 
 ```bash
 python test_config.py
 PYTHONPATH=.. python i18n/test_i18n.py
 ```
 
-Quando `pytest` estiver instalado, os testes podem ser descobertos a partir da raiz do pacote-pai:
+When `pytest` is installed, tests can be discovered from the parent package root:
 
 ```bash
 PYTHONPATH=.. pytest -q
 ```
 
-## Instalação através do ficheiro desktop (Linux)
+## Installation Using the Desktop File (Linux)
 
-O ficheiro `chronometer.desktop` assume que o executável `Chronometer` está disponível no `PATH`.
+The `chronometer.desktop` file assumes that the `Chronometer` executable is available in the `PATH`.
 
-Para uma instalação apenas do utilizador:
+For a per-user installation:
 
 ```bash
 mkdir -p ~/.local/bin ~/.local/share/applications ~/.local/share/icons/hicolor/scalable/apps
@@ -292,42 +292,42 @@ chmod +x ~/.local/bin/Chronometer
 update-desktop-database ~/.local/share/applications 2>/dev/null || true
 ```
 
-Se `~/.local/bin` não estiver no `PATH`, altere `Exec` no ficheiro desktop para o caminho absoluto do executável.
+If `~/.local/bin` is not in the `PATH`, change `Exec` in the desktop file to the executable's absolute path.
 
-O ficheiro desktop e o ícone não são instalados automaticamente pelo build.
+The desktop file and icon are not installed automatically by the build.
 
-## Contribuição
+## Contributing
 
-1. Criar e ativar um ambiente virtual.
-2. Instalar as dependências de runtime e desenvolvimento.
-3. Executar os testes antes e depois das alterações.
-4. Ao alterar textos traduzíveis, atualizar os ficheiros `.po` e recompilar os `.mo`.
-5. Validar o build no sistema operativo alvo.
-6. Manter alterações focadas e atualizar o README quando o comportamento mudar.
+1. Create and activate a virtual environment.
+2. Install the runtime and development dependencies.
+3. Run the tests before and after making changes.
+4. When changing translatable text, update the `.po` files and recompile the `.mo` files.
+5. Validate the build on the target operating system.
+6. Keep changes focused and update the README when behavior changes.
 
-## Problemas conhecidos
+## Known Issues
 
-- O countdown continua a mostrar tempo negativo depois de `00:00` até ser parado manualmente.
-- O build PyInstaller deve ser executado no sistema operativo alvo.
-- No Linux, o PyInstaller ignora o parâmetro `.ico` como ícone do executável; a integração visual depende do `.desktop` e da instalação do ícone.
-- A janela de output requer uma sessão gráfica e o comportamento com múltiplos monitores depende do Qt, do compositor e da sessão X11/Wayland.
-- O aviso de `libtiff.so.5` pode aparecer durante o build quando essa biblioteca não está instalada no sistema.
+- The countdown continues to show negative time after `00:00` until it is stopped manually.
+- The PyInstaller build must be run on the target operating system.
+- On Linux, PyInstaller ignores the `.ico` parameter as the executable icon; visual integration depends on the `.desktop` file and icon installation.
+- The output window requires a graphical session, and multi-monitor behavior depends on Qt, the compositor, and the X11/Wayland session.
+- The `libtiff.so.5` warning may appear during the build when that library is not installed on the system.
 
-## Personalização
+## Customization
 
-Todas as cores, fontes, tamanhos e timings podem ser ajustados em `chronometer/theme.py`:
+All colors, fonts, sizes, and timings can be adjusted in `chronometer/theme.py`:
 
-| Variável | Descrição |
+| Variable | Description |
 |---|---|
-| `LIGHT` / `DARK` | Paletas de cores dos temas |
-| `OUTPUT` | Cores da janela de output |
-| `FONT` | Tamanhos de fonte |
-| `OUTPUT_TIMER_H_RATIO` | Escala do timer no output (% da altura) |
-| `OUTPUT_TIMER_W_RATIO` | Escala do timer no output (% da largura) |
-| `OUTPUT_CLOCK_RATIO` | Escala do relógio (% do timer) |
-| `TIME_WARN_SECS` | Limite para aviso laranja (default: 300s) |
-| `TIME_DANGER_SECS` | Limite para aviso vermelho (default: 120s) |
+| `LIGHT` / `DARK` | Theme color palettes |
+| `OUTPUT` | Output window colors |
+| `FONT` | Font sizes |
+| `OUTPUT_TIMER_H_RATIO` | Output timer scale (% of height) |
+| `OUTPUT_TIMER_W_RATIO` | Output timer scale (% of width) |
+| `OUTPUT_CLOCK_RATIO` | Clock scale (% of timer) |
+| `TIME_WARN_SECS` | Orange warning threshold (default: 300s) |
+| `TIME_DANGER_SECS` | Red warning threshold (default: 120s) |
 
-## Licença
+## License
 
-Este projeto é de uso livre.
+This project is free to use.
