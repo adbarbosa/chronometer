@@ -132,6 +132,17 @@ py -3 -m venv .venv
 py -3 -m pip install PyQt6 polib pyinstaller
 ```
 
+### Windows (Git Bash / MINGW64)
+
+No Git Bash, use `/` nos caminhos e `source` para ativar o ambiente virtual:
+
+```bash
+cd /caminho/para/o/directorio-que-contem-chronometer/chronometer
+py -3 -m venv .venv
+source .venv/Scripts/activate
+py -3 -m pip install PyQt6 polib pyinstaller
+```
+
 ### Passo 2: Compilar traduções
 
 Este passo só é necessário quando os ficheiros `.po` forem alterados. Deve ser executado dentro da pasta `chronometer/`:
@@ -166,6 +177,10 @@ O executável será criado na pasta `dist/`:
 - Windows: `dist/Chronometer.exe`
 
 O script inclui automaticamente os ficheiros `.mo`, os ícones e o ficheiro `chronometer.desktop` existentes no momento do build.
+
+### Limitação de plataforma e arquitetura
+
+O PyInstaller não faz cross-compilation. O executável é gerado para o sistema operativo e a arquitetura do ambiente Python onde o build é executado. Por exemplo, um build feito em Windows gera um executável Windows e um build feito em Linux gera um executável Linux; para disponibilizar ambas as versões, é necessário executar o build em cada sistema operativo e arquitetura alvo.
 
 ### Executar o executável
 
