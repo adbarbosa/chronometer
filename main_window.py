@@ -114,7 +114,7 @@ class MainWindow(QMainWindow):
         preset_minutes = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 45, 60]
         self.preset_buttons = []
         for index, minutes in enumerate(preset_minutes):
-            button = QPushButton(f"{minutes}{_(" min")}")
+            button = QPushButton(f"{minutes}{_(' min')}")
             button.setMinimumHeight(38)
             row = index // 6
             col = index % 6
