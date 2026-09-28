@@ -15,6 +15,7 @@ class ConfigManager:
     # Valores por defeito
     DEFAULTS = {
         "last_monitor_index": 1,  # Usar segundo monitor se disponível
+        "last_monitor_id": None,
         "language": None,  # None = usar idioma do sistema
         "dark_mode": False,  # Tema claro por defeito
     }
@@ -95,6 +96,17 @@ class ConfigManager:
     def save_monitor_index(cls, index: int) -> None:
         """Guarda o índice do monitor."""
         cls.save("last_monitor_index", int(index))
+
+    @classmethod
+    def get_last_monitor_id(cls) -> str | None:
+        """Obtém o identificador persistente do último monitor usado."""
+        value = cls.get("last_monitor_id", None)
+        return value if isinstance(value, str) and value else None
+
+    @classmethod
+    def save_monitor_id(cls, monitor_id: str) -> None:
+        """Guarda o identificador persistente do monitor."""
+        cls.save("last_monitor_id", str(monitor_id))
 
     @classmethod
     def get_language(cls) -> str | None:

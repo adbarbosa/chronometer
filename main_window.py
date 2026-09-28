@@ -24,6 +24,10 @@ from chronometer.i18n import setup_i18n, get_current_language
 from chronometer.theme import CLOCK_INTERVAL, COUNTDOWN_INTERVAL, build_control_styles
 from chronometer.timer_window import TimerWindow
 from chronometer.icon_manager import get_app_icon
+from chronometer.windows_displays import (
+    enumerate_native_displays,
+    find_native_display,
+)
 
 # Mapeamento de códigos de idioma para nomes legíveis
 LANGUAGE_NAMES = {
@@ -193,6 +197,10 @@ class MainWindow(QMainWindow):
         self.btn_output.clicked.connect(self.setup_monitors)
         self.btn_close_output.clicked.connect(self.close_output_window)
         self.btn_refresh_monitors.clicked.connect(self._populate_monitors)
+        app = QApplication.instance()
+        if app is not None:
+            app.screenAdded.connect(lambda _screen: self._populate_monitors())
+            app.screenRemoved.connect(self._handle_screen_removed)
         self.btn_dark_mode.clicked.connect(self.toggle_dark_mode)
         self.btn_start.clicked.connect(self.start_countdown)
         self.btn_stop.clicked.connect(self.stop_countdown)
@@ -233,30 +241,99 @@ class MainWindow(QMainWindow):
         """Abre o website do projeto no navegador."""
         QDesktopServices.openUrl(QUrl("https://github.com/adbarbosa/chronometer"))
 
+    @staticmethod
+    def _get_screen_id(screen) -> str:
+        metadata = (
+            screen.serialNumber(),
+            screen.manufacturer(),
+            screen.model(),
+            screen.name(),
+        )
+        values = [value.strip() for value in metadata if value and value.strip()]
+        if values:
+            return "metadata:" + "|".join(values)
+
+        geometry = screen.geometry()
+        return (
+            f"geometry:{geometry.x()}:{geometry.y()}:{geometry.width()}"
+            f":{geometry.height()}"
+        )
+
+    @classmethod
+    def _get_screen_id_in_list(cls, screen, screens, native_displays=None) -> str:
+        native_display = find_native_display(screen.name(), native_displays or [])
+        if native_display is not None:
+            return f"windows:{native_display.identifier}"
+
+        monitor_id = cls._get_screen_id(screen)
+        matching_screens = [
+            candidate
+            for candidate in screens
+            if cls._get_screen_id(candidate) == monitor_id
+        ]
+        if len(matching_screens) <= 1:
+            return monitor_id
+
+        geometry = screen.geometry()
+        return (
+            f"{monitor_id}|geometry:{geometry.x()}:{geometry.y()}"
+            f":{geometry.width()}:{geometry.height()}"
+        )
+
     def _populate_monitors(self) -> None:
+        selected_id = self.combo_monitors.currentData()
         self.combo_monitors.clear()
         screens = QApplication.screens()
-        for i, screen in enumerate(screens):
+        native_displays = enumerate_native_displays()
+        for screen in screens:
             geo = screen.geometry()
-            name = screen.name() or f"Monitor {i + 1}"
-            self.combo_monitors.addItem(
-                f"{i + 1}. {name} ({geo.width()}×{geo.height()})", i
+            name = screen.name() or "Monitor"
+            native_display = find_native_display(screen.name(), native_displays)
+            monitor_id = self._get_screen_id_in_list(
+                screen, screens, native_displays
             )
-        if len(screens) > 1:
+            display_name = native_display.device_name if native_display else name
+            display_description = (
+                f" - {native_display.description}"
+                if native_display and native_display.description
+                else ""
+            )
+            self.combo_monitors.addItem(
+                f"{display_name}{display_description} "
+                f"({geo.width()}×{geo.height()} @ {geo.x()},{geo.y()})",
+                monitor_id,
+            )
+        selected_index = self.combo_monitors.findData(selected_id)
+        if selected_index >= 0:
+            self.combo_monitors.setCurrentIndex(selected_index)
+        elif len(screens) > 1:
             self.combo_monitors.setCurrentIndex(1)
         self.label_status.setText(
             _("{count} monitor(es) detectado(s)").format(count=len(screens))
         )
 
+    def _handle_screen_removed(self, removed_screen) -> None:
+        output_screen = self.output_window.screen()
+        output_was_visible = self.output_window.isVisible()
+        output_was_removed = output_screen is removed_screen
+
+        self._populate_monitors()
+
+        if output_was_visible and output_was_removed and self.combo_monitors.count():
+            self.setup_monitors()
+
     def _load_saved_monitor_preference(self) -> None:
         """Carrega e seleciona o último monitor usado, com fallback."""
+        saved_id = ConfigManager.get_last_monitor_id()
+        saved_index = self.combo_monitors.findData(saved_id)
+        if saved_index >= 0:
+            self.combo_monitors.setCurrentIndex(saved_index)
+            return
+
         saved_idx = ConfigManager.get_last_monitor_index(default=1)
-        screens = QApplication.screens()
-        
-        # Validar se o monitor salvo ainda existe
-        if 0 <= saved_idx < len(screens):
+        if 0 <= saved_idx < self.combo_monitors.count():
             self.combo_monitors.setCurrentIndex(saved_idx)
-        elif len(screens) > 1:
+        elif self.combo_monitors.count() > 1:
             # Fallback: usar segundo monitor se disponível
             self.combo_monitors.setCurrentIndex(1)
         else:
@@ -264,13 +341,23 @@ class MainWindow(QMainWindow):
             self.combo_monitors.setCurrentIndex(0)
 
     def setup_monitors(self) -> None:
-        idx = self.combo_monitors.currentData()
+        monitor_id = self.combo_monitors.currentData()
         screens = QApplication.screens()
-        if idx is None or idx >= len(screens):
+        native_displays = enumerate_native_displays()
+        screen = next(
+            (
+                screen
+                for screen in screens
+                if self._get_screen_id_in_list(
+                    screen, screens, native_displays
+                ) == monitor_id
+            ),
+            None,
+        )
+        if screen is None:
             self._populate_monitors()
             return
 
-        screen = screens[idx]
         geometry = screen.geometry()
         self.output_window.move(geometry.left(), geometry.top())
         self.output_window.showFullScreen()
@@ -281,7 +368,7 @@ class MainWindow(QMainWindow):
         )
         
         # Guardar preferência do monitor
-        ConfigManager.save_monitor_index(idx)
+        ConfigManager.save_monitor_id(monitor_id)
         
         self._update_displays()
 
