@@ -83,6 +83,10 @@ chronometer/
 ├── theme.py                 # Colors, fonts, sizes, stylesheets
 ├── build.py                 # PyInstaller build script
 ├── test_config.py           # ConfigManager tests
+├── .pylintrc                # Pylint configuration (fail-under=10)
+├── requirements.txt         # Runtime dependencies
+├── requirements-dev.txt     # Dev dependencies (polib, pyinstaller, pytest, pylint)
+├── AGENTS.md                # Instructions for AI coding agents
 ├── chronometer.desktop      # Linux desktop entry
 ├── Chronometer.spec         # Local PyInstaller output (not used by the official build)
 ├── i18n/                    # Internationalization
@@ -92,6 +96,7 @@ chronometer/
 │   ├── pt_PT.po             # Portuguese (Portugal)
 │   ├── en_US.po             # English (United States)
 │   ├── test_i18n.py         # i18n tests
+│   ├── test_mo_up_to_date.py  # Checks each .mo matches its .po
 │   └── locales/             # Compiled .mo files
 │       ├── pt_PT/LC_MESSAGES/chronometer.mo
 │       └── en_US/LC_MESSAGES/chronometer.mo
@@ -395,6 +400,8 @@ python i18n/test_i18n.py
 
 Expected result: each script prints a message saying all tests passed.
 
+The compiled `.mo` files are checked by `i18n/test_mo_up_to_date.py`, which runs with `pytest` (below).
+
 Alternatively, run all tests with `pytest` (included in `requirements-dev.txt`). From the directory that **contains** `chronometer/`, in any terminal:
 
 ```bash
@@ -432,12 +439,32 @@ If `~/.local/bin` is not in the `PATH`, change `Exec` in the desktop file to the
 
 ## Contributing
 
-1. Create and activate a virtual environment.
-2. Install the runtime and development dependencies.
-3. Run the tests before and after making changes.
-4. When changing translatable text, update the `.po` files and recompile the `.mo` files.
+See also [AGENTS.md](AGENTS.md), which holds the same rules for AI coding agents.
+
+1. Create and activate a virtual environment and install `requirements-dev.txt`.
+2. Run the tests and Pylint before and after making changes.
+3. Pylint is **mandatory**: the code must score 10.00/10 (`fail-under=10` in `.pylintrc`). CI runs Pylint and `pytest` on every push and pull request.
+4. When changing translatable text, update the `.po` files, recompile with `python i18n/compile.py` and commit the `.mo` files together with the `.po` files. The `.mo` files are versioned on purpose, and `pytest` fails if a `.mo` is out of date.
 5. Validate the build on the target operating system.
 6. Keep changes focused and update the README when behavior changes.
+
+### Running Pylint
+
+Run from inside the `chronometer/` directory, with the virtual environment active.
+
+**Linux and Windows Git Bash / MINGW64:**
+
+```bash
+python -m pylint $(git ls-files '*.py')
+```
+
+**Windows CMD** (`$(...)` does not exist there; Pylint expands the quoted patterns itself):
+
+```cmd
+python -m pylint "*.py" "i18n/*.py"
+```
+
+Expected result: `Your code has been rated at 10.00/10`. The CMD command was checked on Linux only (with the same quoting); it has not been run on Windows.
 
 ## Known Issues
 
