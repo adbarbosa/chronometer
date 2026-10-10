@@ -8,6 +8,7 @@ A timer for presentations and talks, with a control panel and an output window f
 - [Features](#features)
 - [Requirements](#requirements)
 - [Project Structure](#project-structure)
+- [Getting the Code](#getting-the-code)
 - [Running](#running)
 - [Building the Executable](#building-the-executable)
 - [Internationalization (i18n)](#internationalization-i18n)
@@ -38,16 +39,23 @@ A timer for presentations and talks, with a control panel and an output window f
 - pytest (test execution)
 - pyinstaller or nuitka (executable builds)
 
-### Installation
-```bash
-# Runtime only
-python3 -m pip install PyQt6
+### Tools
+- [Git](https://git-scm.com/) (on Windows, Git for Windows also provides **Git Bash / MINGW64**)
+- Python from [python.org](https://www.python.org/downloads/) (on Windows, enable the `py` launcher during installation)
 
-# Full development setup (including translations and builds)
-python3 -m pip install PyQt6 polib pyinstaller pytest
-```
+Installation of the Python packages is described step by step in [Running](#running) and [Building the Executable](#building-the-executable).
 
-On Windows, you can use `py -3 -m pip` instead of `python3 -m pip`.
+### Command conventions
+
+Every command in this README is given for three terminals:
+
+| Terminal | Python command (before activating the venv) | Activate the venv |
+|---|---|---|
+| **Linux** (bash) | `python3` | `source .venv/bin/activate` |
+| **Windows CMD** | `py -3` | `.venv\Scripts\activate` |
+| **Windows Git Bash / MINGW64** | `py -3` | `source .venv/Scripts/activate` |
+
+Once the virtual environment is **active**, use plain `python` in all three terminals (`python3` does not exist on Windows). Git Bash uses `/` in paths; CMD uses `\`.
 
 ## Project Structure
 
@@ -76,37 +84,93 @@ chronometer/
 └── ...
 ```
 
-## Running
+## Getting the Code
 
-The following instructions assume that the code was obtained in a directory containing the `chronometer/` directory.
-Python 3.10 or later and PyQt6 are required.
+The project must be cloned into a directory named `chronometer`, because it is run as the `chronometer` Python package. The examples below use a `projects` folder in your home directory; the layout will be:
 
-### Linux
-
-```bash
-cd /path/to/directory-containing-chronometer
-python3 -m venv .venv
-source .venv/bin/activate
-python3 -m pip install PyQt6
-python3 -m chronometer
+```
+projects/
+└── chronometer/     ← the repository (contains .venv/ after the setup below)
 ```
 
-### Windows
+**Linux and Windows Git Bash:**
+
+```bash
+mkdir -p ~/projects
+cd ~/projects
+git clone https://gitlab.com/adbtech-pt/python/chronometer.git chronometer
+```
+
+**Windows CMD:**
 
 ```cmd
-cd C:\path\to\directory-containing-chronometer
-py -3 -m venv .venv
-.venv\Scripts\activate
-py -3 -m pip install PyQt6
-py -3 -m chronometer
+mkdir %USERPROFILE%\projects
+cd %USERPROFILE%\projects
+git clone https://gitlab.com/adbtech-pt/python/chronometer.git chronometer
 ```
 
-> **Note:** `python3 -m chronometer` or `py -3 -m chronometer` must be run from the directory that **contains** the `chronometer/` directory, not from inside it.
+To clone over SSH instead, use `git@gitlab.com:adbtech-pt/python/chronometer.git` as the URL.
 
-For direct execution during debugging, you can also run the following from inside the `chronometer/` directory:
+In Git Bash, `~` is your user folder (for example `/c/Users/<name>`).
+
+To update later, from inside the `chronometer/` directory:
 
 ```bash
-python3 __main__.py
+git pull
+```
+
+## Running
+
+This runs the app from source, which needs Python 3.10 or later and PyQt6. First get the code (see [Getting the Code](#getting-the-code)).
+
+### Step 1: Create the virtual environment (once)
+
+Run this **inside** the `chronometer/` directory.
+
+**Linux:**
+
+```bash
+cd ~/projects/chronometer
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install PyQt6
+```
+
+**Windows CMD:**
+
+```cmd
+cd %USERPROFILE%\projects\chronometer
+py -3 -m venv .venv
+.venv\Scripts\activate
+python -m pip install PyQt6
+```
+
+**Windows Git Bash / MINGW64:**
+
+```bash
+cd ~/projects/chronometer
+py -3 -m venv .venv
+source .venv/Scripts/activate
+python -m pip install PyQt6
+```
+
+The prompt shows `(.venv)` while the environment is active. In a new terminal, run only the activation command again (from inside `chronometer/`).
+
+### Step 2: Start the app
+
+The app is a Python package, so `python -m chronometer` must be run from the directory that **contains** `chronometer/` (`projects/`), not from inside it. With the virtual environment active, in all three terminals:
+
+```bash
+cd ..
+python -m chronometer
+```
+
+(In CMD, `cd ..` works the same way.)
+
+For direct execution during debugging, from inside the `chronometer/` directory:
+
+```bash
+python __main__.py
 ```
 
 ## Building the Executable
@@ -114,62 +178,35 @@ python3 __main__.py
 To build the application correctly and ensure that all resources (icons, translations, and the desktop file) are included, use the provided `build.py` script.
 The official process does not use the `Chronometer.spec` file.
 
-### Step 1: Set up the environment
+### Step 1: Install the build tools
 
-**Important:** All commands must be run **inside** the `chronometer/` directory.
+**Important:** All commands in this section must be run **inside** the `chronometer/` directory, with the virtual environment active.
 
-```bash
-# Linux
-cd /path/to/directory-containing-chronometer/chronometer
-python3 -m venv .venv
-source .venv/bin/activate
-python3 -m pip install PyQt6 polib pyinstaller
-
-# Windows (CMD)
-cd C:\path\to\directory-containing-chronometer\chronometer
-py -3 -m venv .venv
-.venv\Scripts\activate
-py -3 -m pip install PyQt6 polib pyinstaller
-```
-
-### Windows (Git Bash / MINGW64)
-
-In Git Bash, use `/` in paths and `source` to activate the virtual environment:
+If you have not created the virtual environment yet, follow [Running, Step 1](#step-1-create-the-virtual-environment-once) first (the `python -m pip install` line there is also needed). Then, with the environment active, install the build tools:
 
 ```bash
-cd /path/to/directory-containing-chronometer/chronometer
-py -3 -m venv .venv
-source .venv/Scripts/activate
-py -3 -m pip install PyQt6 polib pyinstaller
+python -m pip install polib pyinstaller
 ```
+
+This command is the same on Linux, Windows CMD, and Git Bash.
 
 ### Step 2: Compile translations
 
-This step is only required when the `.po` files have changed. It must be run from inside the `chronometer/` directory:
+This step is only required when the `.po` files have changed:
 
 ```bash
-python3 i18n/compile.py
+python i18n/compile.py
 ```
 
-On Windows:
-
-```cmd
-py -3 i18n\compile.py
-```
+This works unchanged on Linux, Windows CMD, and Git Bash (Python accepts `/` in paths on Windows).
 
 ### Step 3: Generate the executable
 
-From inside the `chronometer/` directory, run:
-
 ```bash
-python3 build.py
+python build.py
 ```
 
-On Windows:
-
-```cmd
-py -3 build.py
-```
+This works unchanged on Linux, Windows CMD, and Git Bash.
 
 The executable will be created in the `dist/` directory:
 
@@ -195,6 +232,14 @@ On Windows:
 ```cmd
 dist\Chronometer.exe
 ```
+
+On Windows (Git Bash):
+
+```bash
+./dist/Chronometer.exe
+```
+
+> **Note:** Windows Smart App Control may block the unsigned `.exe` (it cannot verify the publisher). If that happens, run the app from source as described in [Running](#running).
 
 The build must be run on the target operating system. The `Chronometer.spec` file contains locally generated configuration and is not used by the official process.
 
@@ -227,9 +272,15 @@ How Translations Work
 
 ### Add a New Language
 
-1. **Create a new PO file:**
+1. **Create a new PO file** (from inside the `chronometer/` directory):
+
+   Linux / Git Bash:
    ```bash
-   cp chronometer/i18n/chronometer.pot chronometer/i18n/xx_YY.po
+   cp i18n/chronometer.pot i18n/xx_YY.po
+   ```
+   Windows CMD:
+   ```cmd
+   copy i18n\chronometer.pot i18n\xx_YY.po
    ```
    Replace `xx_YY` with the language code (e.g. `pt_BR`, `es_ES`, `fr_FR`)
 
@@ -242,17 +293,17 @@ How Translations Work
      msgstr "Open"
      ```
 
-3. **Compile translations:**
+3. **Compile translations** (virtual environment active, `polib` installed, inside `chronometer/`):
    ```bash
-   cd chronometer
-   python3 i18n/compile.py
+   python i18n/compile.py
    ```
    This generates `.mo` files in `i18n/locales/{xx_YY}/LC_MESSAGES/chronometer.mo`
 
-4. **Test:**
-      ```bash
-   LANG=xx_YY.UTF-8 python3 -m chronometer
+4. **Test:** set `"language": "xx_YY"` in the [configuration file](#configuration), then start the app (from the directory that contains `chronometer/`):
+   ```bash
+   python -m chronometer
    ```
+   On Linux you can also try `LANG=xx_YY.UTF-8 python -m chronometer`; this does not work on Windows, where the configuration file must be used.
 
 ### Key Files
 
@@ -264,18 +315,24 @@ Messages with variable values use placeholders, such as `{count}` and `{monitor_
 
 ## Tests
 
-From the project root:
+Run these from inside the `chronometer/` directory, with the virtual environment active.
+
+**Linux and Git Bash:**
 
 ```bash
 python test_config.py
 PYTHONPATH=.. python i18n/test_i18n.py
 ```
 
-When `pytest` is installed, tests can be discovered from the parent package root:
+**Windows CMD:**
 
-```bash
-PYTHONPATH=.. pytest -q
+```cmd
+python test_config.py
+set PYTHONPATH=..
+python i18n/test_i18n.py
 ```
+
+The two scripts above are the supported way to run the tests. Running `pytest` over the whole project currently reports an error for `i18n/test_i18n.py::test_language`, because that helper function takes a parameter that `pytest` treats as a fixture.
 
 ## Installation Using the Desktop File (Linux)
 
