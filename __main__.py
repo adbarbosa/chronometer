@@ -1,3 +1,5 @@
+"""Ponto de entrada: python -m chronometer."""
+
 from pathlib import Path
 import sys
 

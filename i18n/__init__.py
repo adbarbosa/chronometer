@@ -16,7 +16,7 @@ from PyQt6.QtCore import QLocale
 if getattr(sys, 'frozen', False):
     # Se estiver a correr como um executável compilado (PyInstaller)
     # O PyInstaller extrai os ficheiros para uma pasta temporária definida em sys._MEIPASS
-    BASE_DIR = Path(sys._MEIPASS)
+    BASE_DIR = Path(sys._MEIPASS)  # pylint: disable=protected-access
 else:
     # Se estiver a correr como script Python normal
     # O __file__ está em chronometer/i18n/__init__.py, por isso o parent.parent é a raiz
@@ -39,11 +39,10 @@ def _get_system_language() -> str:
             # Converter 'pt' para 'pt_PT', 'en' para 'en_US', etc.
             if lang.startswith('pt'):
                 return 'pt_PT'
-            elif lang.startswith('en'):
+            if lang.startswith('en'):
                 return 'en_US'
-            else:
-                # Se outro idioma, tentar manter o formato ou fallback
-                return lang.replace('-', '_') if '_' in lang or '-' in lang else 'pt_PT'
+            # Se outro idioma, tentar manter o formato ou fallback
+            return lang.replace('-', '_') if '_' in lang or '-' in lang else 'pt_PT'
     except Exception:
         pass
     return 'pt_PT'
@@ -51,27 +50,26 @@ def _get_system_language() -> str:
 
 def get_current_language() -> str:
     """Retorna o idioma atualmente ativo."""
-    global _current_language
     return _current_language or _get_system_language()
 
 
 def setup_i18n(lang: str | None = None) -> str:
     """
     Configura gettext para o idioma especificado.
-    
+
     Args:
         lang: Idioma no formato 'pt_PT', 'en_US', etc. Se None, detecta do sistema.
-    
+
     Returns:
         O idioma efetivamente configurado.
     """
-    global _current_language
-    
+    global _current_language  # pylint: disable=global-statement
+
     if lang is None:
         lang = _get_system_language()
-    
+
     _current_language = lang
-    
+
     try:
         translation = gettext.translation(
             "chronometer",
@@ -81,8 +79,8 @@ def setup_i18n(lang: str | None = None) -> str:
         )
         # Instalar globalmente no builtins para que _() funcione em todo o lado
         builtins.__dict__['_'] = translation.gettext
-    except Exception as e:
+    except Exception:
         # Fallback: usar identidade (sem tradução)
         builtins.__dict__['_'] = lambda x: x
-    
+
     return lang

@@ -43,7 +43,7 @@ if sys.platform == "win32":
 
 def _read_display_device(device_name: str | None, index: int) -> _DisplayDevice | None:
     device = _DisplayDevice()
-    device.cb = ctypes.sizeof(device)
+    device.cb = ctypes.sizeof(device)  # pylint: disable=attribute-defined-outside-init
     if not _enum_display_devices(device_name, index, ctypes.byref(device), 0):
         return None
     return device
@@ -62,9 +62,9 @@ def enumerate_native_displays() -> list[NativeDisplay]:
             break
         adapter_index += 1
 
-        if not adapter.StateFlags & _DISPLAY_DEVICE_ACTIVE:
+        if not adapter.StateFlags & _DISPLAY_DEVICE_ACTIVE:  # pylint: disable=used-before-assignment
             continue
-        if adapter.StateFlags & _DISPLAY_DEVICE_MIRRORING_DRIVER:
+        if adapter.StateFlags & _DISPLAY_DEVICE_MIRRORING_DRIVER:  # pylint: disable=used-before-assignment
             continue
 
         monitor = _read_display_device(adapter.DeviceName, 0)

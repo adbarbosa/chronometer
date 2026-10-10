@@ -1,0 +1,24 @@
+[MASTER]
+fail-under=10
+extension-pkg-allow-list=PyQt6
+
+[MESSAGES CONTROL]
+# Size/complexity checks: Qt window classes build large UIs by design.
+# broad-exception-caught: intentional fallbacks (i18n, build script, tests).
+disable=too-many-instance-attributes,
+        too-many-statements,
+        too-many-locals,
+        too-many-arguments,
+        too-many-positional-arguments,
+        too-few-public-methods,
+        broad-exception-caught
+
+[BASIC]
+# gettext installs _() into builtins at startup (see i18n/__init__.py)
+additional-builtins=_
+# Qt overrides use camelCase (closeEvent, resizeEvent, ...)
+method-rgx=[a-z_][a-z0-9_]*$|[a-z]+([A-Z][a-z0-9]*)+$
+good-names=_current_language
+
+[FORMAT]
+max-line-length=120

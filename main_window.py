@@ -1,3 +1,5 @@
+"""Janela principal de controlo do Chronometer."""
+
 from PyQt6.QtWidgets import (
     QApplication,
     QAbstractSpinBox,
@@ -6,7 +8,6 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QMainWindow,
-    QMenu,
     QPushButton,
     QSpinBox,
     QStyle,
@@ -14,8 +15,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 from PyQt6.QtCore import QDateTime, QTimer, Qt, QUrl, QSize
-from PyQt6.QtGui import QIcon, QDesktopServices
-from pathlib import Path
+from PyQt6.QtGui import QDesktopServices
 
 from chronometer import __version__
 from chronometer.about_dialog import GITHUB_URL, AboutDialog
@@ -42,7 +42,7 @@ class MainWindow(QMainWindow):
 
         self.remaining_seconds = 0
         self.loaded_preset_seconds = 0
-        
+
         # Carregar preferência de tema
         self.dark_mode = ConfigManager.get_dark_mode()
 
@@ -65,10 +65,10 @@ class MainWindow(QMainWindow):
         self._update_datetime()
         self._retranslate_ui()
         self.clock_timer.start()
-        
+
         # Carregar preferência do último monitor
         self._load_saved_monitor_preference()
-        
+
         # Selecionar idioma atual no combo
         self._select_current_language()
 
@@ -130,7 +130,7 @@ class MainWindow(QMainWindow):
         self.spin_minutes.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
         self.btn_minus = QPushButton("−")
         self.btn_minus.setFixedSize(44, 38)
-        self.btn_plus = QPushButton("+") 
+        self.btn_plus = QPushButton("+")
         self.btn_plus.setFixedSize(44, 38)
         self.btn_set = QPushButton(_("Definir"))
         self.btn_set.setMinimumHeight(38)
@@ -158,14 +158,14 @@ class MainWindow(QMainWindow):
         self.label_date = QLabel("01/01/2000")
         self.btn_dark_mode = QPushButton()
         self.btn_dark_mode.setFixedHeight(28)
-        
+
         # Seletor de idioma
         self.combo_language = QComboBox()
         self.combo_language.setFixedHeight(28)
         self.combo_language.setMinimumWidth(120)
         for lang_code, lang_name in LANGUAGE_NAMES.items():
             self.combo_language.addItem(lang_name, lang_code)
-        
+
         self.label_clock.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.label_date.setAlignment(Qt.AlignmentFlag.AlignRight)
         footer.addWidget(self.label_clock)
@@ -202,8 +202,8 @@ class MainWindow(QMainWindow):
         self.btn_stop.clicked.connect(self.stop_countdown)
         self.btn_reset.clicked.connect(self.reset_countdown)
         self.btn_attention.clicked.connect(self.call_attention)
-        self.btn_minus.clicked.connect(lambda: self.spin_minutes.stepDown())
-        self.btn_plus.clicked.connect(lambda: self.spin_minutes.stepUp())
+        self.btn_minus.clicked.connect(self.spin_minutes.stepDown)
+        self.btn_plus.clicked.connect(self.spin_minutes.stepUp)
         self.btn_set.clicked.connect(self._apply_manual_time)
         self.combo_language.currentIndexChanged.connect(self._on_language_changed)
 
@@ -213,17 +213,17 @@ class MainWindow(QMainWindow):
     def _build_menu_bar(self) -> None:
         """Constrói a barra de menu com opção de Ajuda."""
         menubar = self.menuBar()
-        
+
         # Menu Ajuda
         help_menu = menubar.addMenu(_("Ajuda"))
-        
+
         # Ação: Sobre
         self.about_action = help_menu.addAction(_("Sobre Chronometer"))
         self.about_action.triggered.connect(self.show_about_dialog)
-        
+
         # Separador
         help_menu.addSeparator()
-        
+
         # Ação: Website
         self.website_action = help_menu.addAction(_("Visitar Website"))
         self.website_action.triggered.connect(self._open_website)
@@ -337,6 +337,7 @@ class MainWindow(QMainWindow):
             self.combo_monitors.setCurrentIndex(0)
 
     def setup_monitors(self) -> None:
+        """Preenche a lista de monitores e seleciona o último utilizado."""
         monitor_id = self.combo_monitors.currentData()
         screens = QApplication.screens()
         native_displays = enumerate_native_displays()
@@ -362,13 +363,14 @@ class MainWindow(QMainWindow):
                 monitor_name=self.combo_monitors.currentText()
             )
         )
-        
+
         # Guardar preferência do monitor
         ConfigManager.save_monitor_id(monitor_id)
-        
+
         self._update_displays()
 
     def load_preset(self, minutes: int) -> None:
+        """Carrega uma duração (em minutos) e atualiza os ecrãs."""
         self.stop_countdown()
         self.loaded_preset_seconds = minutes * 60
         self.remaining_seconds = self.loaded_preset_seconds
@@ -379,29 +381,35 @@ class MainWindow(QMainWindow):
         self.load_preset(self.spin_minutes.value())
 
     def start_countdown(self) -> None:
-        if self.remaining_seconds <= 0 and self.loaded_preset_seconds > 0:
+        """Inicia a contagem decrescente."""
+        if self.remaining_seconds <= 0 < self.loaded_preset_seconds:
             self.remaining_seconds = self.loaded_preset_seconds
 
         self.output_window.stop_attention_flash()
         self.countdown_timer.start()
 
     def stop_countdown(self) -> None:
+        """Para a contagem decrescente."""
         self.countdown_timer.stop()
 
     def reset_countdown(self) -> None:
+        """Repõe o tempo da predefinição carregada."""
         self.stop_countdown()
         self.output_window.stop_attention_flash()
         self.remaining_seconds = self.loaded_preset_seconds
         self._update_displays()
 
     def call_attention(self) -> None:
+        """Faz piscar o ecrã de saída."""
         self.output_window.start_attention_flash()
 
     def close_output_window(self) -> None:
+        """Esconde a janela de saída."""
         self.output_window.hide()
         self.label_status.setText(_("Output fechado."))
 
     def toggle_dark_mode(self) -> None:
+        """Alterna e guarda o modo escuro."""
         self.dark_mode = not self.dark_mode
         ConfigManager.save_dark_mode(self.dark_mode)
         self._apply_theme()
@@ -431,34 +439,34 @@ class MainWindow(QMainWindow):
     def _retranslate_ui(self) -> None:
         """Atualiza todos os textos da UI para o idioma atual."""
         self.setWindowTitle(f"Chronometer v{__version__} - {_('Control')}")
-        
+
         # Menu e ações
         self.about_action.setText(_("Sobre Chronometer"))
         self.website_action.setText(_("Visitar Website"))
-        
+
         # Botões de monitor
         self.btn_output.setText(_("Abrir"))
         self.btn_close_output.setText(_("Fechar"))
-        
+
         # Presets
         for button, minutes in self.preset_buttons:
             button.setText(f"{minutes}{_(' min')}")
-        
+
         # Botão definir
         self.btn_set.setText(_("Definir"))
-        
+
         # Controlos
         self.btn_start.setText(_("Iniciar"))
         self.btn_stop.setText(_("Parar"))
         self.btn_reset.setText(_("Repor"))
         self.btn_attention.setText(_("Chamar Atenção"))
-        
+
         # Botão de tema (atualiza com base no estado atual)
         if self.dark_mode:
             self.btn_dark_mode.setText(f"\u2600 {_('Modo Claro')}")
         else:
             self.btn_dark_mode.setText(f"\U0001f319 {_('Modo Escuro')}")
-        
+
         # Atualizar status dos monitores
         screens = QApplication.screens()
         self.label_status.setText(
@@ -524,6 +532,7 @@ class MainWindow(QMainWindow):
         self.label_clock.setText(now.toString("HH:mm:ss"))
         self.label_date.setText(now.toString("dd/MM/yyyy"))
 
-    def closeEvent(self, event) -> None:
+    def closeEvent(self, event) -> None:  # pylint: disable=invalid-name
+        """Fecha também a janela de saída."""
         self.output_window.close()
         event.accept()

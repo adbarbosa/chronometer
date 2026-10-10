@@ -19,7 +19,7 @@ class ConfigManager:
         "language": None,  # None = usar idioma do sistema
         "dark_mode": False,  # Tema claro por defeito
     }
-    
+
     # Idiomas suportados
     LANGUAGE_NAMES = {
         "pt_PT": "Português (PT)",

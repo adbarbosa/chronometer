@@ -15,13 +15,12 @@ def get_app_icon() -> QIcon:
     """
     Retorna o ícone da aplicação, tentando primeiro o formato .ico (Windows)
     e depois o .svg (Linux) como fallback.
-    
+
     Returns:
         QIcon: O ícone da aplicação ou ícone padrão se nenhum estiver disponível.
     """
     if ICO_ICON_PATH.exists():
         return QIcon(str(ICO_ICON_PATH))
-    elif SVG_ICON_PATH.exists():
+    if SVG_ICON_PATH.exists():
         return QIcon(str(SVG_ICON_PATH))
-    else:
-        return QIcon()  # Ícone padrão
+    return QIcon()  # Ícone padrão

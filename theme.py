@@ -1,3 +1,5 @@
+"""Cores, tamanhos e estilos centralizados do Chronometer."""
+
 # ---------------------------------------------------------------------------
 # Todas as cores, tamanhos de fonte e valores visuais centralizados aqui.
 # Para ajustar o visual da aplicação basta alterar este ficheiro.

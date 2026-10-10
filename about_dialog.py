@@ -1,5 +1,7 @@
 """Diálogo 'Sobre Chronometer' com informação do projeto e link para GitHub."""
 
+from pathlib import Path
+
 from PyQt6.QtWidgets import (
     QDialog,
     QVBoxLayout,
@@ -9,7 +11,6 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QUrl
 from PyQt6.QtGui import QIcon, QDesktopServices
-from pathlib import Path
 
 from chronometer import __version__
 

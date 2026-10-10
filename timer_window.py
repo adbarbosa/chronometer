@@ -1,7 +1,8 @@
+"""Janela de saída com o temporizador para o público."""
+
 from PyQt6.QtWidgets import QLabel, QVBoxLayout, QWidget
 from PyQt6.QtCore import QDateTime, QTimer, Qt
-from PyQt6.QtGui import QMouseEvent, QIcon
-from pathlib import Path
+from PyQt6.QtGui import QMouseEvent
 
 from chronometer.theme import (
     CLOCK_INTERVAL, FLASH_INTERVAL_MS, FLASH_MAX_TICKS,
@@ -53,7 +54,8 @@ class TimerWindow(QWidget):
         self._update_output_clock()
         self.retranslate_ui()
 
-    def resizeEvent(self, event) -> None:
+    def resizeEvent(self, event) -> None:  # pylint: disable=invalid-name
+        """Reajusta os tamanhos de fonte ao redimensionar."""
         h = event.size().height()
         w = event.size().width()
         self._timer_size = min(int(h * OUTPUT_TIMER_H_RATIO), int(w * OUTPUT_TIMER_W_RATIO))
@@ -63,6 +65,7 @@ class TimerWindow(QWidget):
         super().resizeEvent(event)
 
     def update_time_display(self, remaining_seconds: int) -> None:
+        """Mostra o tempo restante e ajusta a cor."""
         if remaining_seconds < 0:
             minutes, seconds = divmod(-remaining_seconds, 60)
             self.label.setText(f"-{minutes:02d}:{seconds:02d}")
@@ -86,12 +89,14 @@ class TimerWindow(QWidget):
         self.label.setStyleSheet(output_time_style(color, self._timer_size))
 
     def start_attention_flash(self) -> None:
+        """Inicia o piscar de atenção."""
         self.flash_red = True
         self._flash_ticks = 0
         if not self.flash_timer.isActive():
             self.flash_timer.start()
 
     def stop_attention_flash(self) -> None:
+        """Para o piscar e restaura o fundo."""
         self.flash_timer.stop()
         self._restore_background()
 
@@ -117,7 +122,7 @@ class TimerWindow(QWidget):
         now = QDateTime.currentDateTime()
         self.clock_label.setText(now.toString("HH:mm"))
 
-    def _on_clock_clicked(self, event: QMouseEvent) -> None:
+    def _on_clock_clicked(self, _event: QMouseEvent) -> None:
         self.hide()
 
     def retranslate_ui(self) -> None:
