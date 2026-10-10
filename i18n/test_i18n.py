@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from chronometer.i18n import setup_i18n, LOCALE_DIR
 
 
-def test_language(lang: str, expected_translations: dict) -> bool:
+def check_language(lang: str, expected_translations: dict) -> bool:
     """
     Testa um idioma específico.
     
@@ -97,8 +97,8 @@ def main():
         "Aberto em: {monitor_name}": "Opened in: {monitor_name}",
     }
     
-    pt_passed = test_language("pt_PT", pt_pt_tests)
-    en_passed = test_language("en_US", en_us_tests)
+    pt_passed = check_language("pt_PT", pt_pt_tests)
+    en_passed = check_language("en_US", en_us_tests)
     
     # Resumo
     print(f"\n{'='*60}")

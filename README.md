@@ -10,44 +10,50 @@ A timer for presentations and talks, with a control panel and an output window f
 - [Project Structure](#project-structure)
 - [Getting the Code](#getting-the-code)
 - [Running](#running)
+- [Windows shortcut](#windows-shortcut)
 - [Building the Executable](#building-the-executable)
+- [Configuration](#configuration)
 - [Internationalization (i18n)](#internationalization-i18n)
+- [Tests](#tests)
+- [Installation Using the Desktop File (Linux)](#installation-using-the-desktop-file-linux)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [Known Issues](#known-issues)
 - [Customization](#customization)
 - [License](#license)
 
 ## Features
 
 - **Duration presets** — 1 to 5 minutes, followed by 10, 15, 20, 25, 30, 45, and 60 minutes
-- **Manual duration** — editable field with +/- buttons (1 to 180 minutes)
-- **Color-coded visual warnings** — white (normal), orange (< 1 min), red (< 0 min)
+- **Manual duration** — editable field with +/- buttons (0 to 180 minutes, 10 by default)
+- **Color-coded visual warnings** — white (normal), orange (under 1 minute left), red (overtime, below 00:00)
 - **Call Attention** — red/white flashing effect on the second monitor
 - **Monitor selection** — lists all connected monitors and lets you choose where to show the output
 - **Dark / Light mode** — switch with one click
 - **Responsive text** — the timer and clock adapt to the monitor resolution
 - **Close output by clicking the time** — hides the window without closing the application
 - **Internationalization** — supports Portuguese (Portugal) and English (United States)
-- **Help menu** — access to project information and the GitHub link
+- **Help menu** — access to project information and the project link
 
 ## Requirements
 
 ### Runtime
-- Python 3.10+
+- Python 3.10+ (the code uses `X | None` type syntax, and CI tests 3.10, 3.11 and 3.12)
 - PyQt6
 
-### Development (Translations and Build)
+### Development (translations, tests and build)
 - polib (translation compilation)
-- pytest (test execution)
-- pyinstaller or nuitka (executable builds)
+- pyinstaller (executable builds)
+
+Dependencies are listed in `requirements.txt` (runtime) and `requirements-dev.txt` (runtime plus polib, pyinstaller, pytest and pylint).
 
 ### Tools
 - [Git](https://git-scm.com/) (on Windows, Git for Windows also provides **Git Bash / MINGW64**)
-- Python from [python.org](https://www.python.org/downloads/) (on Windows, enable the `py` launcher during installation)
-
-Installation of the Python packages is described step by step in [Running](#running) and [Building the Executable](#building-the-executable).
+- Python from [python.org](https://www.python.org/downloads/) (on Windows, keep the `py` launcher enabled during installation)
 
 ### Command conventions
 
-Every command in this README is given for three terminals:
+Every procedure in this README gives commands for three terminals:
 
 | Terminal | Python command (before activating the venv) | Activate the venv |
 |---|---|---|
@@ -55,19 +61,30 @@ Every command in this README is given for three terminals:
 | **Windows CMD** | `py -3` | `.venv\Scripts\activate` |
 | **Windows Git Bash / MINGW64** | `py -3` | `source .venv/Scripts/activate` |
 
-Once the virtual environment is **active**, use plain `python` in all three terminals (`python3` does not exist on Windows). Git Bash uses `/` in paths; CMD uses `\`.
+Once the virtual environment is **active** (the prompt shows `(.venv)`), use plain `python` in all three terminals (`python3` does not exist on Windows). Git Bash uses `/` in paths; CMD uses `\`.
+
+> Commands were verified on Linux. The Windows CMD and Git Bash commands follow the same logic but were not run on Windows.
 
 ## Project Structure
 
+The repository root is the `chronometer/` package directory:
+
 ```
 chronometer/
-├── __init__.py              # Package marker (v0.4.2)
+├── __init__.py              # Package marker and __version__ (0.5.0)
 ├── __main__.py              # Entry point (python -m chronometer)
 ├── app.py                   # Creates QApplication, sets up i18n
 ├── main_window.py           # Control panel + Help menu
-├── about_dialog.py          # About Chronometer dialog (v0.4.2)
+├── about_dialog.py          # About Chronometer dialog
 ├── timer_window.py          # Output window (second monitor)
+├── config.py                # ConfigManager (JSON preferences)
+├── icon_manager.py          # Application icon loading
+├── windows_displays.py      # Native monitor names on Windows
 ├── theme.py                 # Colors, fonts, sizes, stylesheets
+├── build.py                 # PyInstaller build script
+├── test_config.py           # ConfigManager tests
+├── chronometer.desktop      # Linux desktop entry
+├── Chronometer.spec         # Local PyInstaller output (not used by the official build)
 ├── i18n/                    # Internationalization
 │   ├── __init__.py          # setup_i18n() - gettext configuration
 │   ├── compile.py           # .po → .mo compiler (uses polib)
@@ -75,30 +92,31 @@ chronometer/
 │   ├── pt_PT.po             # Portuguese (Portugal)
 │   ├── en_US.po             # English (United States)
 │   ├── test_i18n.py         # i18n tests
-│   └── locales/             # Compiled (generated)
+│   └── locales/             # Compiled .mo files
 │       ├── pt_PT/LC_MESSAGES/chronometer.mo
 │       └── en_US/LC_MESSAGES/chronometer.mo
-├── icon/
-│   ├── chronometer-stopwatch-svgrepo-com.svg  # Original asset
-│   └── chronometer-stopwatch-svgrepo-com.ico  # Icon for Windows/PyInstaller
-└── ...
+└── icon/
+    ├── chronometer-stopwatch-svgrepo-com.svg  # Original asset
+    └── chronometer-stopwatch-svgrepo-com.ico  # Icon for Windows/PyInstaller
 ```
 
 ## Getting the Code
 
-The project must be cloned into a directory named `chronometer`, because it is run as the `chronometer` Python package. The examples below use a `projects` folder in your home directory; the layout will be:
+The project must be cloned into a directory named `chronometer`, because it is run as the `chronometer` Python package. The examples use a `projects` folder in your home directory:
 
 ```
 projects/
 └── chronometer/     ← the repository (contains .venv/ after the setup below)
 ```
 
-**Linux and Windows Git Bash:**
+### Step 1: Clone
+
+**Linux:**
 
 ```bash
 mkdir -p ~/projects
 cd ~/projects
-git clone https://gitlab.com/adbtech-pt/python/chronometer.git chronometer
+git clone https://github.com/adbarbosa/chronometer.git chronometer
 ```
 
 **Windows CMD:**
@@ -106,14 +124,24 @@ git clone https://gitlab.com/adbtech-pt/python/chronometer.git chronometer
 ```cmd
 mkdir %USERPROFILE%\projects
 cd %USERPROFILE%\projects
-git clone https://gitlab.com/adbtech-pt/python/chronometer.git chronometer
+git clone https://github.com/adbarbosa/chronometer.git chronometer
 ```
 
-To clone over SSH instead, use `git@gitlab.com:adbtech-pt/python/chronometer.git` as the URL.
+**Windows Git Bash / MINGW64:**
 
-In Git Bash, `~` is your user folder (for example `/c/Users/<name>`).
+```bash
+mkdir -p ~/projects
+cd ~/projects
+git clone https://github.com/adbarbosa/chronometer.git chronometer
+```
 
-To update later, from inside the `chronometer/` directory:
+In Git Bash, `~` is your user folder (for example `/c/Users/<name>`). To clone over SSH instead, use `git@github.com:adbarbosa/chronometer.git` as the URL.
+
+Expected result: a `chronometer/` folder inside `projects/`.
+
+### Step 2: Update later (optional)
+
+From inside `chronometer/`, in any terminal:
 
 ```bash
 git pull
@@ -121,11 +149,11 @@ git pull
 
 ## Running
 
-This runs the app from source, which needs Python 3.10 or later and PyQt6. First get the code (see [Getting the Code](#getting-the-code)).
+This runs the app from source. It needs Python 3.10+ and PyQt6, and an interactive graphical session.
 
 ### Step 1: Create the virtual environment (once)
 
-Run this **inside** the `chronometer/` directory.
+Run these **inside** the `chronometer/` directory.
 
 **Linux:**
 
@@ -133,7 +161,7 @@ Run this **inside** the `chronometer/` directory.
 cd ~/projects/chronometer
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install PyQt6
+python -m pip install -r requirements.txt
 ```
 
 **Windows CMD:**
@@ -142,7 +170,7 @@ python -m pip install PyQt6
 cd %USERPROFILE%\projects\chronometer
 py -3 -m venv .venv
 .venv\Scripts\activate
-python -m pip install PyQt6
+python -m pip install -r requirements.txt
 ```
 
 **Windows Git Bash / MINGW64:**
@@ -151,106 +179,131 @@ python -m pip install PyQt6
 cd ~/projects/chronometer
 py -3 -m venv .venv
 source .venv/Scripts/activate
-python -m pip install PyQt6
+python -m pip install -r requirements.txt
 ```
 
-The prompt shows `(.venv)` while the environment is active. In a new terminal, run only the activation command again (from inside `chronometer/`).
+Expected result: the prompt starts with `(.venv)` and `python -m pip show PyQt6` lists the package. In a new terminal, run only the activation command again (from inside `chronometer/`).
 
 ### Step 2: Start the app
 
-The app is a Python package, so `python -m chronometer` must be run from the directory that **contains** `chronometer/` (`projects/`), not from inside it. With the virtual environment active, in all three terminals:
+`python -m chronometer` must be run from the directory that **contains** `chronometer/` (here, `projects/`), not from inside it. With the virtual environment active, the same two commands work in all three terminals:
 
 ```bash
 cd ..
 python -m chronometer
 ```
 
-(In CMD, `cd ..` works the same way.)
+Expected result: the Chronometer control window opens.
 
-For direct execution during debugging, from inside the `chronometer/` directory:
+For direct execution during debugging, run this from inside the `chronometer/` directory (also the same in all three terminals):
 
 ```bash
 python __main__.py
 ```
 
+## Windows shortcut
+
+To start the app without opening a terminal, create a shortcut. This avoids the unsigned `.exe` (see [Building the Executable](#building-the-executable)). It was not tested on Windows.
+
+1. Complete [Running, Step 1](#step-1-create-the-virtual-environment-once).
+2. Right-click the desktop and choose **New > Shortcut**.
+3. For the location, use the `pythonw.exe` of the virtual environment (it does not open a console window), followed by the module:
+
+   ```
+   C:\Users\<name>\projects\chronometer\.venv\Scripts\pythonw.exe -m chronometer
+   ```
+
+4. Name it "Chronometer" and finish.
+5. Open the shortcut's **Properties** and set **Start in** to the directory that **contains** `chronometer/` (here, `C:\Users\<name>\projects`). Without this, Python cannot find the `chronometer` package.
+6. Optionally, use **Change Icon** and select `icon\chronometer-stopwatch-svgrepo-com.ico`.
+
 ## Building the Executable
 
-To build the application correctly and ensure that all resources (icons, translations, and the desktop file) are included, use the provided `build.py` script.
-The official process does not use the `Chronometer.spec` file.
+To build the application correctly and ensure that all resources (icons, translations, and the desktop file) are included, use the provided `build.py` script. The official process does not use the `Chronometer.spec` file.
 
 ### Step 1: Install the build tools
 
-**Important:** All commands in this section must be run **inside** the `chronometer/` directory, with the virtual environment active.
-
-If you have not created the virtual environment yet, follow [Running, Step 1](#step-1-create-the-virtual-environment-once) first (the `python -m pip install` line there is also needed). Then, with the environment active, install the build tools:
+Prerequisite: the virtual environment from [Running, Step 1](#step-1-create-the-virtual-environment-once), **active**, with the current directory set to `chronometer/`.
 
 ```bash
-python -m pip install polib pyinstaller
+python -m pip install -r requirements-dev.txt
 ```
 
-This command is the same on Linux, Windows CMD, and Git Bash.
+The command is the same on Linux, Windows CMD, and Git Bash.
 
 ### Step 2: Compile translations
 
-This step is only required when the `.po` files have changed:
+Only required when the `.po` files have changed. From inside `chronometer/`:
 
 ```bash
 python i18n/compile.py
 ```
 
-This works unchanged on Linux, Windows CMD, and Git Bash (Python accepts `/` in paths on Windows).
+Expected result: one `Compilando <lang>.po... ✓` line per language and a success message. The command is the same in all three terminals (Python accepts `/` in paths on Windows).
 
 ### Step 3: Generate the executable
+
+From inside `chronometer/`:
 
 ```bash
 python build.py
 ```
 
-This works unchanged on Linux, Windows CMD, and Git Bash.
+The command is the same in all three terminals. The script includes the `.mo` files, icons, and `chronometer.desktop` present at build time.
 
-The executable will be created in the `dist/` directory:
+Expected result:
 
 - Linux: `dist/Chronometer`
 - Windows: `dist/Chronometer.exe`
 
-The script automatically includes the `.mo` files, icons, and `chronometer.desktop` file present at build time.
+`build.py` always uses this name, without version or platform. If you share builds, rename the copy yourself (for example `Chronometer-v0.5.0-windows-x64.exe`).
 
 ### Platform and architecture limitation
 
-PyInstaller does not perform cross-compilation. The executable is generated for the operating system and architecture of the Python environment where the build is run. For example, a build made on Windows generates a Windows executable and a build made on Linux generates a Linux executable; to provide both versions, the build must be run on each target operating system and architecture.
+PyInstaller does not perform cross-compilation. The executable is generated for the operating system and architecture of the Python environment where the build is run. To provide Windows and Linux versions, run the build on each one.
 
-### Run the executable
+### Step 4: Run the executable
 
-On Linux:
+**Linux:**
 
 ```bash
 ./dist/Chronometer
 ```
 
-On Windows:
+**Windows CMD:**
 
 ```cmd
 dist\Chronometer.exe
 ```
 
-On Windows (Git Bash):
+**Windows Git Bash / MINGW64:**
 
 ```bash
 ./dist/Chronometer.exe
 ```
 
-> **Note:** Windows Smart App Control may block the unsigned `.exe` (it cannot verify the publisher). If that happens, run the app from source as described in [Running](#running).
+### Windows Smart App Control
 
-The build must be run on the target operating system. The `Chronometer.spec` file contains locally generated configuration and is not used by the official process.
+The `.exe` is **not code-signed**. Windows Smart App Control (and SmartScreen) can block it with a message saying the publisher could not be verified. This is not a bug in the app: an executable without a trusted signature has no verifiable publisher.
+
+- The reliable alternative is to run the app from source ([Running](#running)) or with a [shortcut](#windows-shortcut).
+- A trusted code-signing certificate or service is required for the `.exe` to be accepted on other PCs. Self-signed certificates do not help on other computers.
+- Turning Smart App Control off is not recommended; it may be impossible to turn it back on without resetting Windows.
+
+Not tested: whether an `.exe` built locally on the same PC is blocked.
 
 ## Configuration
 
-Preferences are stored in `~/.chronometer/config.json`:
+Preferences are stored in `config.json` inside a `.chronometer` folder in your user folder (`Path.home()`):
+
+- Linux: `~/.chronometer/config.json`
+- Windows: `C:\Users\<name>\.chronometer\config.json` (in Git Bash, `~/.chronometer/config.json`)
 
 | Key | Values | Default |
 |---|---|---|
 | `last_monitor_index` | Integer monitor index | `1` |
-| `language` | `pt_PT`, `en_US`, or `null` | `null` |
+| `last_monitor_id` | Monitor identifier or `null` | `null` |
+| `language` | `pt_PT`, `en_US`, or `null` (use the system language) | `null` |
 | `dark_mode` | `true` or `false` | `false` |
 
 The monitor index is validated at startup, and a fallback is used when the saved monitor no longer exists.
@@ -259,57 +312,65 @@ Tests use a temporary directory and should not modify this file.
 
 ## Internationalization (i18n)
 
-How Translations Work
+### How translations work
 
-- **Automatic detection:** The application detects the system language via `locale.getdefaultlocale()`
-- **Fallback:** If the language is not supported, it falls back to pt_PT
-- **Initialization:** In `app.py`, `setup_i18n()` is called before creating the UI
+1. At startup, `app.py` reads `language` from the configuration and calls `setup_i18n()` before creating the UI.
+2. If `language` is `null`, the system language is detected with Qt (`QLocale.system().name()`). `pt*` becomes `pt_PT`, `en*` becomes `en_US`, and any other language is used as is.
+3. If no translation file exists for the resulting language, the original (source) strings are shown. If the system language cannot be determined at all, `pt_PT` is used.
 
-### Supported Languages
+### Supported languages
 
 - **pt_PT** — Portuguese (Portugal) [default]
 - **en_US** — English (United States)
 
-### Add a New Language
+### Add a new language
 
-1. **Create a new PO file** (from inside the `chronometer/` directory):
+All commands run from inside the `chronometer/` directory, with the virtual environment active and `polib` installed.
 
-   Linux / Git Bash:
+1. **Create a new PO file.** Replace `xx_YY` with the language code (for example `pt_BR`, `es_ES`, `fr_FR`).
+
+   Linux and Git Bash:
+
    ```bash
    cp i18n/chronometer.pot i18n/xx_YY.po
    ```
+
    Windows CMD:
+
    ```cmd
    copy i18n\chronometer.pot i18n\xx_YY.po
    ```
-   Replace `xx_YY` with the language code (e.g. `pt_BR`, `es_ES`, `fr_FR`)
 
-2. **Translate strings in the `.po` file:**
-   - Open it with Poedit, Lokalize, or a text editor
-   - Fill in `msgstr` with the translation for each `msgid`
-   - Example:
-     ```po
-     msgid "Open"
-     msgstr "Open"
-     ```
+2. **Translate the strings** in the `.po` file with Poedit, Lokalize, or a text editor. Fill in `msgstr` for each `msgid`:
 
-3. **Compile translations** (virtual environment active, `polib` installed, inside `chronometer/`):
+   ```po
+   msgid "Open"
+   msgstr "Open"
+   ```
+
+3. **Compile the translations** (same in all three terminals):
+
    ```bash
    python i18n/compile.py
    ```
-   This generates `.mo` files in `i18n/locales/{xx_YY}/LC_MESSAGES/chronometer.mo`
 
-4. **Test:** set `"language": "xx_YY"` in the [configuration file](#configuration), then start the app (from the directory that contains `chronometer/`):
+   This generates `i18n/locales/xx_YY/LC_MESSAGES/chronometer.mo`.
+
+4. **Test.** Set `"language": "xx_YY"` in the [configuration file](#configuration), then start the app from the directory that contains `chronometer/`:
+
    ```bash
    python -m chronometer
    ```
-   On Linux you can also try `LANG=xx_YY.UTF-8 python -m chronometer`; this does not work on Windows, where the configuration file must be used.
 
-### Key Files
+   To also make the language selectable in the app, add it to `ConfigManager.LANGUAGE_NAMES` in `config.py`. The language selector and `SUPPORTED_LANGUAGES` are both derived from it.
 
-- `chronometer/i18n/__init__.py` — `setup_i18n(lang)` configures gettext
-- `chronometer/i18n/compile.py` — Compiles `.po` → `.mo` using polib
-- `chronometer/i18n/test_i18n.py` — Tests whether translations load correctly
+### Key files
+
+Paths are relative to the `chronometer/` repository directory:
+
+- `i18n/__init__.py` — `setup_i18n(lang)` configures gettext
+- `i18n/compile.py` — compiles `.po` → `.mo` using polib
+- `i18n/test_i18n.py` — checks that translations load correctly
 
 Messages with variable values use placeholders, such as `{count}` and `{monitor_name}`. The template must be translated before applying `.format()`.
 
@@ -317,7 +378,7 @@ Messages with variable values use placeholders, such as `{count}` and `{monitor_
 
 Run these from inside the `chronometer/` directory, with the virtual environment active.
 
-**Linux and Git Bash:**
+**Linux and Windows Git Bash / MINGW64:**
 
 ```bash
 python test_config.py
@@ -332,13 +393,18 @@ set PYTHONPATH=..
 python i18n/test_i18n.py
 ```
 
-The two scripts above are the supported way to run the tests. Running `pytest` over the whole project currently reports an error for `i18n/test_i18n.py::test_language`, because that helper function takes a parameter that `pytest` treats as a fixture.
+Expected result: each script prints a message saying all tests passed.
+
+Alternatively, run all tests with `pytest` (included in `requirements-dev.txt`). From the directory that **contains** `chronometer/`, in any terminal:
+
+```bash
+cd ..
+python -m pytest -q chronometer --ignore=chronometer/.venv
+```
 
 ## Installation Using the Desktop File (Linux)
 
-The `chronometer.desktop` file assumes that the `Chronometer` executable is available in the `PATH`.
-
-For a per-user installation:
+The `chronometer.desktop` file assumes that the `Chronometer` executable is available in the `PATH`. From inside `chronometer/`, after [building](#building-the-executable), for a per-user installation:
 
 ```bash
 mkdir -p ~/.local/bin ~/.local/share/applications ~/.local/share/icons/hicolor/scalable/apps
@@ -349,9 +415,20 @@ chmod +x ~/.local/bin/Chronometer
 update-desktop-database ~/.local/share/applications 2>/dev/null || true
 ```
 
-If `~/.local/bin` is not in the `PATH`, change `Exec` in the desktop file to the executable's absolute path.
+If `~/.local/bin` is not in the `PATH`, change `Exec` in the desktop file to the executable's absolute path. The build does not install the desktop file or icon automatically.
 
-The desktop file and icon are not installed automatically by the build.
+## Troubleshooting
+
+| Problem | Cause and fix |
+|---|---|
+| `py` is not recognized (Windows) | The Python launcher is not installed. Reinstall Python from python.org with the `py` launcher enabled, or use `python` if it is on the `PATH`. |
+| `python3: command not found` on Windows | `python3` does not exist there. Use `py -3` before activating the venv and `python` after. |
+| `ModuleNotFoundError: No module named 'chronometer'` | `python -m chronometer` was run from the wrong directory. Run it from the directory that **contains** `chronometer/` (`cd ..`). |
+| `No module named 'PyQt6'` or `polib` | The venv is not active, or the package was not installed in it. Activate the venv and run `python -m pip install -r requirements-dev.txt`. |
+| Venv activation is blocked on Windows | In PowerShell, script execution may be disabled; use CMD or Git Bash instead, or change the execution policy for your user. Not tested here. |
+| The `.exe` is blocked by Smart App Control | See [Windows Smart App Control](#windows-smart-app-control). |
+| The output window does not appear on the second monitor | Check that the monitor is connected and selected in the app. A saved monitor that no longer exists falls back automatically. On Linux, multi-monitor behavior depends on Qt, the compositor, and X11/Wayland. |
+| `libtiff.so.5` warning during the Linux build | It appears when that library is not installed. See [Known Issues](#known-issues). |
 
 ## Contributing
 
@@ -366,25 +443,26 @@ The desktop file and icon are not installed automatically by the build.
 
 - The countdown continues to show negative time after `00:00` until it is stopped manually.
 - The PyInstaller build must be run on the target operating system.
+- The Windows `.exe` is unsigned and may be blocked (see [Windows Smart App Control](#windows-smart-app-control)).
 - On Linux, PyInstaller ignores the `.ico` parameter as the executable icon; visual integration depends on the `.desktop` file and icon installation.
 - The output window requires a graphical session, and multi-monitor behavior depends on Qt, the compositor, and the X11/Wayland session.
 - The `libtiff.so.5` warning may appear during the build when that library is not installed on the system.
 
 ## Customization
 
-All colors, fonts, sizes, and timings can be adjusted in `chronometer/theme.py`:
+All colors, fonts, sizes, and timings can be adjusted in `theme.py` (in the `chronometer/` directory):
 
 | Variable | Description |
 |---|---|
 | `LIGHT` / `DARK` | Theme color palettes |
 | `OUTPUT` | Output window colors |
 | `FONT` | Font sizes |
-| `OUTPUT_TIMER_H_RATIO` | Output timer scale (% of height) |
-| `OUTPUT_TIMER_W_RATIO` | Output timer scale (% of width) |
-| `OUTPUT_CLOCK_RATIO` | Clock scale (% of timer) |
-| `TIME_WARN_SECS` | Orange warning threshold (default: 300s) |
-| `TIME_DANGER_SECS` | Red warning threshold (default: 120s) |
+| `OUTPUT_TIMER_H_RATIO` | Output timer scale (% of height, default: 0.45) |
+| `OUTPUT_TIMER_W_RATIO` | Output timer scale (% of width, default: 0.22) |
+| `OUTPUT_CLOCK_RATIO` | Clock scale (% of timer, default: 0.60) |
+| `TIME_WARN_SECS` | Orange warning threshold (default: 60 s) |
+| `TIME_DANGER_SECS` | Red warning threshold (default: 0 s, i.e. overtime) |
 
 ## License
 
-This project is free to use.
+This project is licensed under the [MIT License](LICENSE).

@@ -21,7 +21,11 @@ class ConfigManager:
     }
     
     # Idiomas suportados
-    SUPPORTED_LANGUAGES = ["pt_PT", "en_US"]
+    LANGUAGE_NAMES = {
+        "pt_PT": "Português (PT)",
+        "en_US": "English (US)",
+    }
+    SUPPORTED_LANGUAGES = list(LANGUAGE_NAMES)
     DEFAULT_LANGUAGE = "pt_PT"
 
     @classmethod

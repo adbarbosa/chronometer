@@ -106,6 +106,13 @@ def test_generic_get_save():
     print(f"  ✅ Guardou e carregou chave customizada: {loaded}")
 
 
+def test_supported_languages_match_names():
+    """Teste: lista de idiomas suportados derivada dos nomes."""
+    assert ConfigManager.SUPPORTED_LANGUAGES == list(ConfigManager.LANGUAGE_NAMES)
+    assert ConfigManager.DEFAULT_LANGUAGE in ConfigManager.SUPPORTED_LANGUAGES
+    print("✓ Idiomas suportados consistentes")
+
+
 if __name__ == "__main__":
     print("=" * 60)
     print("🔬 TESTES DE PERSISTÊNCIA DO CONFIGMANAGER")
@@ -117,7 +124,7 @@ if __name__ == "__main__":
         test_type_conversion()
         test_config_file_location()
         test_generic_get_save()
-        
+        test_supported_languages_match_names()
         print("\n" + "=" * 60)
         print("✅ TODOS OS TESTES PASSARAM!")
         print("=" * 60)

@@ -7,9 +7,10 @@ Idiomas suportados: pt_PT (Portugal), en_US (English)
 
 import builtins
 import gettext
-import locale
 import sys
 from pathlib import Path
+
+from PyQt6.QtCore import QLocale
 
 # Localizar pasta de traduções
 if getattr(sys, 'frozen', False):
@@ -33,8 +34,8 @@ def _get_system_language() -> str:
     Fallback para 'pt_PT' se não conseguir determinar.
     """
     try:
-        lang, _ = locale.getdefaultlocale()
-        if lang:
+        lang = QLocale.system().name()
+        if lang and lang != 'C':
             # Converter 'pt' para 'pt_PT', 'en' para 'en_US', etc.
             if lang.startswith('pt'):
                 return 'pt_PT'

@@ -18,7 +18,7 @@ from PyQt6.QtGui import QIcon, QDesktopServices
 from pathlib import Path
 
 from chronometer import __version__
-from chronometer.about_dialog import AboutDialog
+from chronometer.about_dialog import GITHUB_URL, AboutDialog
 from chronometer.config import ConfigManager
 from chronometer.i18n import setup_i18n, get_current_language
 from chronometer.theme import CLOCK_INTERVAL, COUNTDOWN_INTERVAL, build_control_styles
@@ -29,11 +29,7 @@ from chronometer.windows_displays import (
     find_native_display,
 )
 
-# Mapeamento de códigos de idioma para nomes legíveis
-LANGUAGE_NAMES = {
-    "pt_PT": "Português (PT)",
-    "en_US": "English (US)",
-}
+LANGUAGE_NAMES = ConfigManager.LANGUAGE_NAMES
 
 
 class MainWindow(QMainWindow):
@@ -239,7 +235,7 @@ class MainWindow(QMainWindow):
 
     def _open_website(self) -> None:
         """Abre o website do projeto no navegador."""
-        QDesktopServices.openUrl(QUrl("https://github.com/adbarbosa/chronometer"))
+        QDesktopServices.openUrl(QUrl(GITHUB_URL))
 
     @staticmethod
     def _get_screen_id(screen) -> str:
