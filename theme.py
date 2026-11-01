@@ -98,18 +98,22 @@ FONT_FAMILY = "Verdana"
 
 # Dimensões dos widgets; as durações e os estados pertencem à lógica da aplicação.
 CONTROL = {
-    "size": (680, 550),
+    "size": (400, 550),
     "margins": (12, 10, 12, 10),
-    "spacing": 8,
+    "spacing": 6,
     "monitor_height": 32,
+    "monitor_characters": 12,
     "refresh_size": 36,
     "refresh_icon": 18,
-    "preset_margins": (10, 10, 10, 10),
-    "preset_height": 38,
+    "preset_margins": (6, 6, 6, 6),
+    "preset_height": 34,
+    "preset_columns": 4,
     "step_width": 44,
     "control_height": 46,
     "footer_height": 28,
     "language_width": 120,
+    "datetime_margins": (0, 0, 0, 0),
+    "datetime_spacing": 0,
 }
 
 ABOUT = {
@@ -183,7 +187,7 @@ def build_control_styles(dark: bool) -> dict[str, str]:
         "timer": (
             f"font-size: {f['timer_main']}; font-family: {FONT_FAMILY}; font-weight: 700;"
             f"color: {t['timer_text']}; background: {t['timer_bg']};"
-            f"border-radius: 10px; padding: 12px;"
+            f"border-radius: 10px; padding: 8px;"
         ),
         "presets_box": (
             f"background-color: {t['presets_bg']};"
@@ -196,7 +200,7 @@ def build_control_styles(dark: bool) -> dict[str, str]:
             font_size=f['btn_preset'],
             font_weight="600",
             radius=8,
-            padding="8px 12px",
+            padding="5px 8px",
             hover_bg=t['preset_btn_hover'],
         ),
         "control_btn": _button_style(

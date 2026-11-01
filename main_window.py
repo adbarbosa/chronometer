@@ -11,6 +11,7 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QSpinBox,
     QStyle,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -20,6 +21,7 @@ from PyQt6.QtGui import QDesktopServices, QScreen
 from chronometer import __version__
 from chronometer.about_dialog import GITHUB_URL, AboutDialog
 from chronometer.config import ConfigManager
+from chronometer.compact_widgets import ElidingComboBox, ElidingLabel
 from chronometer.countdown import Countdown
 from chronometer.displays import DisplayInfo, DisplayManager
 from chronometer.i18n import setup_i18n, get_current_language
@@ -95,8 +97,11 @@ class MainWindow(QMainWindow):
 
         monitor_row = QHBoxLayout()
         monitor_row.setSpacing(CONTROL["spacing"])
-        self.combo_monitors = QComboBox()
+        self.combo_monitors = ElidingComboBox()
         self.combo_monitors.setMinimumHeight(CONTROL["monitor_height"])
+        self.combo_monitors.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        self.combo_monitors.setMinimumContentsLength(CONTROL["monitor_characters"])
+        self.combo_monitors.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.btn_refresh_monitors = QPushButton()
         self.btn_refresh_monitors.setIcon(
             self.style().standardIcon(QStyle.StandardPixmap.SP_BrowserReload)
@@ -111,7 +116,7 @@ class MainWindow(QMainWindow):
         monitor_row.addWidget(self.btn_refresh_monitors)
         monitor_row.addWidget(self.btn_output)
         monitor_row.addWidget(self.btn_close_output)
-        self.label_status = QLabel("")
+        self.label_status = ElidingLabel("")
         self._populate_monitors()
 
         self.time_main_label = QLabel("00:00")
@@ -128,8 +133,8 @@ class MainWindow(QMainWindow):
         for index, minutes in enumerate(preset_minutes):
             button = QPushButton(f"{minutes}{_(' min')}")
             button.setMinimumHeight(CONTROL["preset_height"])
-            row = index // 6
-            col = index % 6
+            row = index // CONTROL["preset_columns"]
+            col = index % CONTROL["preset_columns"]
             presets_layout.addWidget(button, row, col)
             self.preset_buttons.append((button, minutes))
 
@@ -182,14 +187,18 @@ class MainWindow(QMainWindow):
         for lang_code, lang_name in ConfigManager.LANGUAGE_NAMES.items():
             self.combo_language.addItem(lang_name, lang_code)
 
-        self.label_clock.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.label_clock.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.label_date.setAlignment(Qt.AlignmentFlag.AlignRight)
-        footer.addWidget(self.label_clock)
-        footer.addStretch(1)
+        self.datetime_container = QWidget()
+        datetime_column = QVBoxLayout(self.datetime_container)
+        datetime_column.setContentsMargins(*CONTROL["datetime_margins"])
+        datetime_column.setSpacing(CONTROL["datetime_spacing"])
+        datetime_column.addWidget(self.label_date)
+        datetime_column.addWidget(self.label_clock)
         footer.addWidget(self.combo_language)
         footer.addWidget(self.btn_dark_mode)
         footer.addStretch(1)
-        footer.addWidget(self.label_date)
+        footer.addWidget(self.datetime_container, 0, Qt.AlignmentFlag.AlignRight)
 
         layout.addWidget(self.label_status)
         layout.addLayout(monitor_row)
@@ -274,7 +283,11 @@ class MainWindow(QMainWindow):
         displays = self.display_manager.refresh()
         self.combo_monitors.clear()
         for display in displays:
-            self.combo_monitors.addItem(self._display_text(display), display.identifier)
+            text = self._display_text(display)
+            self.combo_monitors.addItem(text, display.identifier)
+            self.combo_monitors.setItemData(
+                self.combo_monitors.count() - 1, text, Qt.ItemDataRole.ToolTipRole,
+            )
         index = self.display_manager.preferred_index(selected_id, 1)
         self.combo_monitors.setCurrentIndex(index)
         self._update_output_status()
