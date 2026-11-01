@@ -29,11 +29,12 @@ The root folder is the `chronometer` Python package. It must keep that name. The
 
 ```text
 chronometer/
-├── __init__.py           # Authoritative version: 0.5.0
+├── __init__.py           # Authoritative version: 0.6.0
 ├── __main__.py           # Direct/module entry point
 ├── app.py                # Language, QApplication and platform startup
 ├── countdown.py          # Pure countdown state and monotonic timing
 ├── main_window.py        # Controls, events and output coordination
+├── compact_widgets.py    # Ellipsis when drawing; full text and tooltips retained
 ├── timer_window.py       # Audience countdown, clock and attention effect
 ├── about_dialog.py       # Project information, using the panel's theme
 ├── theme.py              # Palettes, dimensions and stylesheet builders
@@ -165,7 +166,11 @@ See [Translations](translations.md) for extraction, catalog updates, registratio
 - Timing and threshold constants: display updates, attention and warning limits.
 - Functions producing Qt stylesheets, which are text rules similar to CSS.
 
-The control panel has a fixed configured size. The About dialog has a configured minimum size and can accommodate more text. Output fonts scale with the output's dimensions. Native window decorations and font substitution remain platform-dependent.
+The control panel has a fixed configured size of 400 × 550. The preset grid has three rows and four columns, with these minute values from left to right: `1, 2, 3, 4`; `5, 10, 15, 20`; `25, 30, 45, 60`. The compact layout uses smaller margins and button padding while retaining the main text sizes. The footer places the language selector and theme button on the left. On the right, the date sits above the clock, with both labels right-aligned. These local date/time labels are independent of countdown state.
+
+`compact_widgets.py` provides `ElidingComboBox` and `ElidingLabel`. They shorten long monitor names and output-status text with an ellipsis only when drawing. Tooltips retain the complete text. Full monitor labels and identity data remain available to selection and placement logic, so fitting the panel must not change monitor identity or confuse the pending selection with the actual open output.
+
+The About dialog has a configured minimum size and can accommodate more text. Output fonts scale with the output's dimensions. Native window decorations and font substitution remain platform-dependent; the operating system's borders are additional to the configured panel size.
 
 ## Resources and executable layout
 

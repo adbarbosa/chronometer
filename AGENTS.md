@@ -46,6 +46,7 @@ Tests default to Qt's `offscreen` backend if none is set. On Linux, an explicit 
 | Startup | `app.py`, `__main__.py`, `__init__.py` |
 | Countdown state | `countdown.py`; coordinated by `main_window.py` |
 | Controls and output | `main_window.py`, `timer_window.py`, `about_dialog.py` |
+| Elided monitor and status text | `compact_widgets.py` |
 | Visual values and styles | `theme.py` |
 | Preferences | `config.py` |
 | Display identity and placement | `displays.py`, `windows_displays.py`; coordinated by `main_window.py` |
@@ -58,6 +59,8 @@ Read [Architecture](docs/architecture.md) before changing state, resource lookup
 ## Preserve these contracts
 
 - Startup loads ten minutes and remains stopped. Manual field edits take effect only after Set; choosing a preset stops and loads it.
+- Keep the 400 × 550 control panel and its three rows of four presets: `1, 2, 3, 4`; `5, 10, 15, 20`; `25, 30, 45, 60` minutes. Keep the footer's language/theme controls on the left and the date above the clock, both right-aligned, on the right. Preserve the main text sizes when adjusting spacing.
+- Shorten long monitor/status text only when drawing it. Preserve the full text in tooltips and underlying widget data, and preserve the selected monitor's identity.
 - `Countdown` owns elapsed state. Use its monotonic reading, not the number of Qt notifications. Preserve fractional pause/resume, overtime and restart of an expired positive duration.
 - Read remaining time once per display update and send that same reading to both windows. The output must not run an independent countdown. Its normal warning color must not replace the current attention contrast during time updates or resizing.
 - Hiding output, including clicking its smaller clock or closing through the OS, does not pause and must update the panel status. Reset stops the countdown and attention effect. Closing the panel stops its timers and closes both windows. Destroying the panel also disposes of its output; bind application-wide signals to QObject receiver slots instead of lambdas capturing widgets.

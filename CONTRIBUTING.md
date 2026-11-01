@@ -95,6 +95,7 @@ Use these entry points:
 |---|---|
 | Countdown behavior | `countdown.py`, then its use in `main_window.py` |
 | Control layout or actions | `main_window.py` |
+| Shortened monitor/status display and full-text tooltips | `compact_widgets.py` |
 | Audience output or attention flash | `timer_window.py` |
 | Colors, dimensions or styles | `theme.py` |
 | Preferences or file errors | `config.py` |
@@ -208,6 +209,12 @@ Check that:
 7. Changing language updates the Help menu and keeps the selector consistent with the displayed language; About follows the selected theme.
 8. The panel still names the actual open monitor after a list refresh or language change. A pending selection alone does not move the output.
 9. Closing the panel closes the output. Preference-save failures produce a short status-bar notice without stopping the presentation.
+
+For control-panel layout changes, repeat the check in Portuguese and English with both light and dark themes. The panel should remain 400 × 550, excluding window borders, with no clipped or overlapping controls. Check the preset rows in order: `1, 2, 3, 4`; `5, 10, 15, 20`; `25, 30, 45, 60` minutes. Click each preset and confirm that it stops and loads the displayed duration. The language selector and theme button belong on the left of the footer; the date belongs above the clock on the right, with both right-aligned. Keep the main text sizes when adjusting margins or button padding.
+
+Use a long monitor name and a long open-output status to check that the panel stays narrow. A shortened label should end with an ellipsis, while its tooltip shows the complete text. Refresh the list and change language to confirm that shortening text does not change the pending selection or the actual open monitor. Record whether these checks used a desktop or Qt's `offscreen` backend; a rendered image does not verify physical monitor placement.
+
+To check the preference-save failure notice, create another fresh test folder and put an empty directory named `config.json` inside it. Set `CHRONOMETER_CONFIG_DIR` to that test folder before launching, then change the theme. A directory cannot be replaced by the preference file, so the save should fail: the status-bar notice should fit, and the timer should still work. Close the app and remove the test folder afterwards.
 
 For monitor changes, add real connect/disconnect, duplicate-monitor and display-scaling checks on each target platform. Switch between monitors with the output already full screen as well as when first opening it. Test on the intended Wayland/X11 compositor or Windows display setup: `setScreen()` explicitly chooses the target, while coordinate placement alone may be ignored. Cloned physical monitors sharing one Qt screen cannot be selected independently. Record the OS, desktop session and display arrangement.
 

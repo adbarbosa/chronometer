@@ -98,7 +98,7 @@ Verify:
 1. The panel starts without access to a source-file working directory.
 2. The application and About icons load.
 3. Portuguese and English work, including the Help menu and output title.
-4. Start, Stop, Reset, manual duration and presets work.
+4. Start, Stop, Reset, manual duration and all twelve presets work. The 400 × 550 panel fits in both languages and themes: presets form three rows (`1, 2, 3, 4`; `5, 10, 15, 20`; `25, 30, 45, 60` minutes), and the date sits above the clock at the bottom right. Long monitor/status labels show their full text in tooltips.
 5. The selected output display opens full screen and remains synchronized.
 6. Attention flashes and restores the background; hiding/reopening preserves progress.
 7. Theme, language and monitor identity survive a restart using the **same** temporary preference folder. For shell checks, replace the temporary-folder creation expression with the actual path from the first run rather than creating a new folder each time.

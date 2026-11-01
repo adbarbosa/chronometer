@@ -1,6 +1,6 @@
 # Validation record
 
-This record describes checks performed during the robustness and regression update on **2026-11-01**. It is evidence for that checkout and environment, not a guarantee about every platform or future change. Repeat the relevant checks after editing the application.
+This record describes checks performed for the **0.6.0 compact-layout update on 2026-11-01**, following the earlier robustness work. It is evidence for that checkout and environment, not a guarantee about every platform or future change. Repeat the relevant checks after editing the application.
 
 ## Local environment
 
@@ -29,15 +29,21 @@ python -m pylint "*.py" "i18n/*.py"
 git diff --check
 ```
 
-Results: **81 tests passed**, **Pylint 10.00/10**, and no whitespace errors. Tests were also run through the older parent-directory invocation. Repeating catalog update/compilation without changes produced identical catalog bytes. Local documentation paths and internal heading links were checked.
+Results: **83 tests passed**, **Pylint 10.00/10**, and no whitespace errors. The two new tests observe the text actually sent to Qt's painter: long labels and monitor selections are shortened visually, while their full text, tooltips and monitor identities remain intact. Repeating catalog update/compilation without changes produced identical catalog bytes. Local documentation paths and internal heading links were checked. Changed Python modules also passed a Python 3.10 syntax check and a check for module, class and named-function docstrings.
 
 The suite's actual scope is listed in [Contributing](../CONTRIBUTING.md#what-the-automated-tests-cover). Regressions now include concurrent writers, bounded lock failure, invalid/non-finite preferences, effective-language fallback, contrast while flashing and resizing, output visibility/status, explicit screen association, QObject destruction, invalid-icon fallback and startup-check process cleanup. The additional-language test creates and compiles a temporary catalog without changing the supported production languages.
 
-The direct entry point was also started from a fresh bash shell after environment activation, and the module entry point was started from the parent folder. Both stayed running during short `offscreen` startup checks with temporary preferences and no traceback.
+In a separate UI check, all twelve preset buttons were clicked in Portuguese and English with both themes. Each stopped the countdown and loaded its displayed duration. The main-window title and About dialog both reported version 0.6.0.
 
 ## Visual checks
 
-The control panel, output and About dialog were rendered with Qt's `offscreen` backend and temporary preferences. English/light and Portuguese/dark panel/About captures were inspected for legibility and text clipping. A real held preference lock was used to trigger and inspect the nonmodal save-failure notice. The white attention phase was also inspected after a time update. The README's two images show the English control panel and an output with 45 seconds remaining. Example clock/date labels were set for those images.
+The control panel and About dialog were rendered with Qt's `offscreen` backend and temporary preferences. The panel was checked in all four Portuguese/English and light/dark combinations at Qt scale factors 1, 1.25, 1.5 and 2. Four additional cases used Qt's Windows widget style on Linux; this is a style simulation, not a Windows operating-system test. Captures of all four language/theme combinations and examples at 125% and 200% were inspected for clipping and overlap.
+
+The panel remained **400 × 550 logical pixels** in all 20 cases, with a 400 × 506 central area. The central layout's minimum size was 371 × 502 in Portuguese and 364 × 502 in English. The twelve presets occupied three rows of four, with buttons at least 34 pixels high. The date appeared above the clock on the right, with their right edges aligned. No visible control extended beyond the central area.
+
+A simulated long monitor name and open-output status were shortened to fit, while the full text, tooltip and selected monitor identity stayed intact. The nonmodal save-failure notice fitted in the status bar and the countdown kept running. These rendering checks used a simulated failed-save result; an isolated configuration check also confirmed that a directory at the preference-file path makes a real save fail without replacing that directory.
+
+The README's control image was regenerated at 400 × 550 using the English/light interface. Its existing output image shows 45 seconds remaining; the audience output layout was unchanged. Example clock/date labels were set for these documentation images.
 
 This confirms rendering in the local test backend. It does not establish physical-screen placement, operating-system window decorations or font availability on another machine.
 

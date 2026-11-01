@@ -1,6 +1,6 @@
 # Chronometer
 
-**Version:** 0.5.0
+**Version:** 0.6.0
 
 Chronometer is a desktop countdown timer for presentations and talks. The presenter uses a **control panel**. A separate **output window** shows the remaining time and the current clock time to the speaker or audience, usually on a second monitor or projector.
 
@@ -29,7 +29,7 @@ You can run the Python source code or build an executable for your operating sys
 - Supports Portuguese (Portugal) and English (United States), with language changes during use.
 - Saves the control-panel theme, language choice and last output monitor.
 
-The control panel contains the monitor controls, countdown, presets, manual duration, timer buttons and language/theme controls:
+The control panel contains the monitor controls, countdown, presets, manual duration, timer buttons and language/theme controls. Its fixed size is 400 × 550, excluding the operating system's window borders. Smaller margins and button padding keep the panel narrow while retaining the main text sizes:
 
 ![Control panel with ten minutes loaded and the English interface](docs/images/control.png)
 
@@ -185,7 +185,17 @@ The following labels are English / Portuguese. The interface language is chosen 
 
 With one monitor, the full-screen output can cover the control panel. Click the smaller clock in the output to hide it and return to the controls.
 
+Long monitor names and output-status text may end with an ellipsis (`…`) to fit the panel. Hold the pointer over the monitor selector or status line to read the complete text in a tooltip. The shortened display does not change the selected monitor.
+
 ### Understand the controls
+
+The twelve preset buttons are arranged in three rows of four. All values are minutes:
+
+| Row | Values, from left to right |
+|---|---|
+| Top | 1, 2, 3, 4 |
+| Middle | 5, 10, 15, 20 |
+| Bottom | 25, 30, 45, 60 |
 
 | Control or action | Result |
 |---|---|
@@ -214,7 +224,9 @@ These warning colors apply to the **output**. The control panel uses its selecte
 
 ### Change theme or language
 
-Use the controls at the bottom of the panel. The light/dark choice applies to the control panel and to the About dialog when it is opened. The normal output background stays black for either theme.
+Use the language selector and theme button at the bottom left of the panel. The date and local clock stay together at the bottom right, with the date above the time; both align to the right. They use `dd/MM/yyyy` and `HH:mm:ss`, respectively, and update independently of the countdown.
+
+The light/dark choice applies to the control panel and to the About dialog when it is opened. The normal output background stays black for either theme.
 
 The language selector updates the interface during use, including the Help menu. The selection is saved immediately. Help / Ajuda contains the About dialog and a link to the project on GitHub.
 
