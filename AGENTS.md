@@ -1,66 +1,108 @@
-# AGENTS.md
+# Agent instructions
 
-Instructions for AI coding agents working on Chronometer. Humans: see [README.md](README.md).
+Chronometer is a Python/PyQt6 presentation timer with a control panel and a separate audience output. Read these rules before editing. For complete setup steps and explanations, use [Contributing](CONTRIBUTING.md); for user behavior, use [README](README.md).
 
-## Overview
+## Start in the right place
 
-Chronometer is a PyQt6 countdown timer for presentations: a control window plus an output window for a second monitor. The repository root **is** the Python package `chronometer`, so imports look like `from chronometer.config import ConfigManager`.
+The repository root **is** the Python package `chronometer`. Keep that folder name. Imports use `from chronometer.config import ConfigManager`; there is no editable pip installation.
 
-## Layout
+Use the existing checkout unless instructed otherwise. Inspect `git status --short` before editing and preserve unrelated work. Do not reset files, make commits, push or change the app version merely because you are implementing a task.
 
-- `app.py`, `__main__.py`: entry point (`python -m chronometer`).
-- `main_window.py`, `timer_window.py`, `about_dialog.py`: UI.
-- `theme.py`: all colors, sizes and stylesheets. Put visual values here.
-- `config.py`: `ConfigManager`, JSON preferences in `~/.chronometer/config.json`.
-- `windows_displays.py`, `icon_manager.py`: platform helpers.
-- `i18n/`: gettext setup, `.pot`/`.po` sources, compiled `.mo` in `i18n/locales/`.
-- `build.py`: PyInstaller build. Do not edit `Chronometer.spec`, `build/` or `dist/`.
+All commands below run from the repository root and assume its virtual environment is active. On Linux, prepare it with:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements-dev.txt
+```
+
+If `.venv` exists, activate it instead of recreating it. Windows CMD and Git Bash activation and interpreter commands are in [Contributing](CONTRIBUTING.md#prepare-your-environment).
 
 ## Commands
 
-Run inside the repository root with the virtual environment active (`python -m venv .venv`, then `python -m pip install -r requirements-dev.txt`).
+| Task | Command from the root |
+|---|---|
+| Interactive app | `python __main__.py` |
+| Full test suite | `python -m pytest -q . --ignore=.venv` |
+| Pylint, including new files | `python -m pylint "*.py" "i18n/*.py"` |
+| Configuration subset | `python -m pytest -q test_config.py` |
+| Translation subset | `python -m pytest -q i18n` |
+| Extract messages and merge catalogs | `python i18n/update.py` |
+| Compile registered translations | `python i18n/compile.py` |
+| Build current platform's executable | `python build.py` |
+| Check whitespace | `git diff --check` |
 
-| Task | Command |
-|------|---------|
-| Run the app | `cd .. && python -m chronometer` |
-| Tests | `cd .. && python -m pytest -q chronometer --ignore=chronometer/.venv` |
-| Config tests | `python test_config.py` |
-| Pylint | `python -m pylint $(git ls-files '*.py')` |
-| Compile translations | `python i18n/compile.py` |
-| Build executable | `python build.py` |
+The lint patterns cover current root and `i18n` modules. Extend them and CI if adding another Python source directory. The older `git ls-files '*.py'` command omits untracked files, so it cannot by itself validate newly created modules.
 
-`python -m chronometer` must run from the folder that **contains** the repository. Without a display, set `QT_QPA_PLATFORM=offscreen`.
+`python -m chronometer` is also supported, but only from the repository's parent directory. Avoid persistent `cd ..` steps in command sequences.
 
-## Conventions
+Tests default to Qt's `offscreen` backend if none is set. On Linux, an explicit invocation is `QT_QPA_PLATFORM=offscreen python -m pytest -q . --ignore=.venv`. Use a real desktop for interactive checks. For cache permission errors, see [Contributing](CONTRIBUTING.md#3-establish-a-baseline).
 
-- Code, comments, docstrings and UI strings are in **Portuguese (pt-PT)**. README, AGENTS.md and commit messages are in **English**.
-- Commits follow Conventional Commits (`feat:`, `fix:`, `docs:`, `test:`, `chore:`).
-- Use type hints like `str | None` (Python 3.10+).
-- Every module and function needs a docstring (Pylint enforces it).
-- Keep changes small and focused. Do not fix unrelated issues.
+## Where changes belong
 
-## Pylint is mandatory
+| Area | Files |
+|---|---|
+| Startup | `app.py`, `__main__.py`, `__init__.py` |
+| Countdown state | `countdown.py`; coordinated by `main_window.py` |
+| Controls and output | `main_window.py`, `timer_window.py`, `about_dialog.py` |
+| Visual values and styles | `theme.py` |
+| Preferences | `config.py` |
+| Display identity | Monitor helpers in `main_window.py`, `windows_displays.py` |
+| Icons and resource roots | `icon_manager.py`, `resources.py` |
+| Translations | `i18n/`, registered in `ConfigManager.LANGUAGE_NAMES` |
+| Packaging | `build.py`; generated output in `build/` and `dist/` |
 
-`.pylintrc` sets `fail-under=10`. The code must score **10.00/10** before you finish. Fix the cause instead of adding disables; inline disables need a real reason (Windows-only code, `sys._MEIPASS`, imports after `sys.path.insert`).
+Read [Architecture](docs/architecture.md) before changing state, resource lookup or platform integration.
 
-## Translations
+## Preserve these contracts
 
-- Wrap every user-visible string in `_("...")`.
-- When strings change, update `i18n/chronometer.pot` and each `i18n/*.po`, then run `python i18n/compile.py`.
-- The `.mo` files **are versioned**. Commit them in the same commit as the `.po` changes. `pytest` fails if a `.mo` is stale.
-- Languages are defined once in `ConfigManager.LANGUAGE_NAMES`.
+- Startup loads ten minutes and remains stopped. Manual field edits take effect only after Set; choosing a preset stops and loads it.
+- `Countdown` owns elapsed state. Use its monotonic reading, not the number of Qt notifications. Preserve fractional pause/resume, overtime and restart of an expired positive duration.
+- Read remaining time once per display update and send that same reading to both windows. The output must not run an independent countdown.
+- Hiding output, including clicking its smaller clock, does not pause. Reset stops the countdown and attention effect. Closing the panel closes both windows.
+- Initialize gettext with `setup_i18n()` before constructing UI objects that use `_()`. A `QApplication` must exist before widgets are created.
+- A language change refreshes controls, menu and output title. About uses the current panel theme when opened. The ordinary output remains black.
+- Prefer saved monitor identity to the legacy index. Preserve native Windows identity, repeated-metadata disambiguation and missing-monitor fallback. Do not replace identity with a list index.
+- Guard Windows APIs by platform. Linux tests must not execute native Windows calls.
+- Preserve temporary-file writing, flush/fsync and `os.replace` for preferences. A failed save must not truncate the last valid file.
+- Do not read or modify personal preferences for tests or screenshots. Fixtures must override both `CONFIG_DIR` and `CONFIG_FILE`. For standalone experiments/build checks, set `CHRONOMETER_CONFIG_DIR` to a fresh temporary folder before starting the process.
+- Use `resources.resource_path()` for bundled data. Frozen data lives under the PyInstaller extraction root, not a source working directory.
 
-## Versioning
+## Code and documentation conventions
 
-The version lives in `__init__.py` (`__version__`) and is repeated in the README project tree. Change both together, and only when asked.
+- Identifiers are in English, following the existing API. Comments, docstrings, UI source messages and script diagnostics use Portuguese (Portugal).
+- README, AGENTS, other repository guides and commit messages are in English. Write for a newcomer: explain prerequisites, terms, starting directory, commands, expected output and recovery steps. Keep user-facing technical detail relevant to the user's task.
+- Use Python 3.10-compatible annotations such as `str | None`.
+- Every module, class and named function needs a meaningful docstring, including constructors/private helpers. Pylint does not enforce every private docstring: check this convention separately.
+- Put explicit visual values and stylesheet construction in `theme.py`; keep countdown durations and state in application logic.
+- Keep changes focused. Fix a lint cause rather than adding suppressions or lowering checks. A local suppression requires a concrete reason, such as a Windows-only API, PyInstaller's private attribute or imports after a direct-script path adjustment.
+- Use Conventional Commits if a commit is requested. Do not create commits as an automatic completion step.
 
-## Before finishing a task
+## Translation workflow
 
-1. `python -m pylint $(git ls-files '*.py')` gives 10.00/10.
-2. `pytest` (command above) passes.
-3. Translations compiled if any text changed.
-4. README updated if behavior, commands or structure changed.
+Follow [Translations](docs/translations.md), including its new-language procedure.
 
-## Limitations
+- Wrap translatable UI text in `_()` with a non-empty literal Portuguese source message. Apply `.format()` afterwards and preserve named fields in every translation.
+- Product names, technical identifiers, numeric times, developer-script diagnostics and `.desktop` metadata do not use this Python message extractor.
+- `ConfigManager.LANGUAGE_NAMES` is the registration source for the selector, update tool and compiler. `SUPPORTED_LANGUAGES` is derived at import time.
+- When source messages change: run `python i18n/update.py`, finish every registered PO, run `python i18n/compile.py`, then tests.
+- Version `.pot`, `.po` and generated `.mo` changes together. The binaries are intentional source-controlled runtime resources.
+- Documentation-only prose changes do not require regenerating translations. A version update changes translation metadata, so run the updater/compiler in that case too.
 
-Development is done on Linux. Windows behavior (CMD, Git Bash, Smart App Control, `windows_displays.py`) is not verified by automated tests: say so instead of claiming it works.
+## Generated files and version
+
+Do not manually edit `Chronometer.spec`, `build/` or `dist/`. `python build.py` generates `build/Chronometer.spec`; the root tracked specification is a legacy artifact and must remain untouched by a normal build.
+
+The authoritative app version is `__version__` in `__init__.py`. Change it only when requested. Review the README version and architecture tree and regenerate translation metadata if a version change is requested. Do not hard-code a version into test banners. The `.desktop` entry's `Version=1.0` is a format version, not the app release.
+
+## Completion checks and reporting
+
+1. Run Pylint on all application and test modules: it must score **10.00/10** (`fail-under=10`).
+2. Run the complete pytest command above. Add meaningful regression coverage for changed logic; do not rely solely on a smoke launch.
+3. Compile translations if translatable UI messages or catalog metadata changed. Confirm coverage and MO checks pass.
+4. For UI changes, inspect affected windows in both languages/themes as relevant. `offscreen` is a rendering check, not real monitor validation.
+5. For packaging/resource changes, build and launch outside the checkout with temporary preferences. Verify the root tracked `.spec` is unchanged.
+6. Update the appropriate user/developer/architecture guide. Check local links and follow changed command sequences literally.
+7. Review `git diff`, new files and `git diff --check`. State changes, evidence and material limitations in the final response.
+
+Use the [validation record](docs/validation.md) to distinguish automated, simulated, visual and physical checks. Development is on Linux. Do not claim Windows CMD/Git Bash, Smart App Control, native Windows display APIs or physical multi-monitor placement have been verified unless they actually were. A configured GitHub Actions matrix is not evidence of a remote run.
