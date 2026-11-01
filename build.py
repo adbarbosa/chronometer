@@ -11,7 +11,7 @@ import PyInstaller.__main__
 def build():
     """
     Script para automatizar o processo de build do Chronometer usando PyInstaller.
-    Garante que os recursos (ícones e traduções) sejam incluídos corretamente.
+    Inclui os recursos e gera o .spec dentro de build/, sem alterar o .spec legado.
     """
     # Determina o diretório onde o script build.py está localizado
     script_dir = Path(__file__).resolve().parent
@@ -36,6 +36,8 @@ def build():
         f'--name={app_name}',
         '--onefile',
         '--windowed',
+        f'--paths={script_dir.parent}',
+        f'--specpath={script_dir / "build"}',
     ]
 
     # Adiciona o ícone (se existir)

@@ -96,6 +96,39 @@ FONT = {
 
 FONT_FAMILY = "Verdana"
 
+# Dimensões dos widgets; as durações e os estados pertencem à lógica da aplicação.
+CONTROL = {
+    "size": (680, 520),
+    "margins": (12, 10, 12, 10),
+    "spacing": 8,
+    "monitor_height": 32,
+    "refresh_size": 36,
+    "refresh_icon": 18,
+    "preset_margins": (10, 10, 10, 10),
+    "preset_height": 38,
+    "step_width": 44,
+    "control_height": 46,
+    "footer_height": 28,
+    "language_width": 120,
+}
+
+ABOUT = {
+    "size": (540, 440),
+    "margins": (20, 20, 20, 20),
+    "spacing": 12,
+    "header_spacing": 15,
+    "icon_size": 64,
+    "separator_height": 1,
+    "feature_margins": (20, 0, 0, 0),
+    "feature_spacing": 4,
+    "button_spacing": 10,
+    "button_height": 36,
+    "close_width": 100,
+}
+
+OUTPUT_TIMER_DEFAULT_PX = 220
+OUTPUT_CLOCK_DEFAULT_PX = 52
+
 # ---- Timings (ms) --------------------------------------------------------
 
 FLASH_INTERVAL_MS   = 250
@@ -226,7 +259,26 @@ def build_control_styles(dark: bool) -> dict[str, str]:
             f"border: 1px solid {t['preset_btn_border']}; border-radius: 8px;"
             f"padding: 4px 8px;"
         ),
+        "refresh": "QPushButton { padding: 0px; }",
     }
+
+
+def build_about_style(dark: bool) -> str:
+    """Gera o tema do diálogo Sobre, incluindo os seus textos e botões."""
+    palette = DARK if dark else LIGHT
+    return (
+        f"QDialog {{ background-color: {palette['bg']}; }}"
+        f"QLabel {{ color: {palette['text']}; font-size: 12px; }}"
+        "QLabel#about_title { font-size: 18px; font-weight: bold; }"
+        f"QLabel#about_tagline {{ color: {palette['text_muted']}; }}"
+        "QLabel#about_features { font-weight: bold; }"
+        f"QLabel#about_separator {{ background-color: {palette['btn_border']}; }}"
+        + _button_style(
+            bg=palette['btn_bg'], text_color=palette['text'], border=palette['btn_border'],
+            font_size="12px", font_weight="600", radius=4, padding="0px 20px",
+            hover_bg=palette['btn_hover'],
+        )
+    )
 
 
 def output_bg_style() -> str:
@@ -234,7 +286,7 @@ def output_bg_style() -> str:
     return f"background-color: {OUTPUT['bg']};"
 
 
-def output_time_style(color: str, size_px: int = 220) -> str:
+def output_time_style(color: str, size_px: int = OUTPUT_TIMER_DEFAULT_PX) -> str:
     """Stylesheet do label de tempo na janela de output."""
     return (
         f"color: {color}; font-size: {size_px}px;"
@@ -242,7 +294,7 @@ def output_time_style(color: str, size_px: int = 220) -> str:
     )
 
 
-def output_clock_style(size_px: int = 52) -> str:
+def output_clock_style(size_px: int = OUTPUT_CLOCK_DEFAULT_PX) -> str:
     """Stylesheet do relógio na janela de output."""
     return (
         f"color: {OUTPUT['clock_text']}; font-size: {size_px}px;"

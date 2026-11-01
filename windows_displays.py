@@ -19,6 +19,8 @@ class NativeDisplay:
 
 if sys.platform == "win32":
     class _DisplayDevice(ctypes.Structure):
+        """Representação da estrutura DISPLAY_DEVICEW da API Windows."""
+
         _fields_ = [
             ("cb", wintypes.DWORD),
             ("DeviceName", wintypes.WCHAR * 32),
@@ -42,6 +44,7 @@ if sys.platform == "win32":
 
 
 def _read_display_device(device_name: str | None, index: int) -> _DisplayDevice | None:
+    """Lê um dispositivo através da API nativa; usado apenas em Windows."""
     device = _DisplayDevice()
     device.cb = ctypes.sizeof(device)  # pylint: disable=attribute-defined-outside-init
     if not _enum_display_devices(device_name, index, ctypes.byref(device), 0):

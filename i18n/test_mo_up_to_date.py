@@ -5,6 +5,8 @@ from pathlib import Path
 import polib
 import pytest
 
+from chronometer import __version__
+
 I18N_DIR = Path(__file__).resolve().parent
 LANGUAGES = sorted(path.stem for path in I18N_DIR.glob("*.po"))
 
@@ -14,7 +16,7 @@ def _translations(catalog) -> dict:
     return {
         entry.msgid: entry.msgstr
         for entry in catalog
-        if entry.msgid and entry.msgstr
+        if entry.msgid and entry.msgstr and not entry.obsolete and "fuzzy" not in entry.flags
     }
 
 
@@ -31,6 +33,8 @@ def test_mo_matches_po(lang):
 
     po = polib.pofile(str(I18N_DIR / f"{lang}.po"))
     mo = polib.mofile(str(mo_path))
+    assert po.metadata["Project-Id-Version"] == f"Chronometer {__version__}"
+    assert mo.metadata["Project-Id-Version"] == po.metadata["Project-Id-Version"]
     assert _translations(mo) == _translations(po), (
         f"{lang}: .mo desatualizado; corra: python i18n/compile.py"
     )

@@ -20,8 +20,9 @@ from PyQt6.QtGui import QDesktopServices
 from chronometer import __version__
 from chronometer.about_dialog import GITHUB_URL, AboutDialog
 from chronometer.config import ConfigManager
+from chronometer.countdown import Countdown
 from chronometer.i18n import setup_i18n, get_current_language
-from chronometer.theme import CLOCK_INTERVAL, COUNTDOWN_INTERVAL, build_control_styles
+from chronometer.theme import CLOCK_INTERVAL, CONTROL, COUNTDOWN_INTERVAL, build_control_styles
 from chronometer.timer_window import TimerWindow
 from chronometer.icon_manager import get_app_icon
 from chronometer.windows_displays import (
@@ -29,19 +30,19 @@ from chronometer.windows_displays import (
     find_native_display,
 )
 
-LANGUAGE_NAMES = ConfigManager.LANGUAGE_NAMES
+DEFAULT_MINUTES = 10
 
 
 class MainWindow(QMainWindow):
-    """Painel de Controle Principal"""
+    """Painel de controlo e coordenação das duas janelas."""
 
     def __init__(self):
+        """Carrega as preferências e prepara uma contagem de dez minutos parada."""
         super().__init__()
-        self.setFixedSize(680, 520)
+        self.setFixedSize(*CONTROL["size"])
         self.setWindowIcon(get_app_icon())
 
-        self.remaining_seconds = 0
-        self.loaded_preset_seconds = 0
+        self.countdown = Countdown(DEFAULT_MINUTES * 60)
 
         # Carregar preferência de tema
         self.dark_mode = ConfigManager.get_dark_mode()
@@ -72,25 +73,36 @@ class MainWindow(QMainWindow):
         # Selecionar idioma atual no combo
         self._select_current_language()
 
+    @property
+    def remaining_seconds(self) -> int:
+        """Expõe o tempo calculado pelo modelo da contagem."""
+        return self.countdown.remaining_seconds
+
+    @property
+    def loaded_preset_seconds(self) -> int:
+        """Expõe a duração usada ao repor ou reiniciar uma contagem esgotada."""
+        return self.countdown.loaded_seconds
+
     def _build_ui(self) -> None:
+        """Constrói os controlos e o campo de duração manual."""
         layout = QVBoxLayout()
-        layout.setContentsMargins(12, 10, 12, 10)
-        layout.setSpacing(8)
+        layout.setContentsMargins(*CONTROL["margins"])
+        layout.setSpacing(CONTROL["spacing"])
 
         monitor_row = QHBoxLayout()
-        monitor_row.setSpacing(8)
+        monitor_row.setSpacing(CONTROL["spacing"])
         self.combo_monitors = QComboBox()
-        self.combo_monitors.setMinimumHeight(32)
+        self.combo_monitors.setMinimumHeight(CONTROL["monitor_height"])
         self.btn_refresh_monitors = QPushButton()
         self.btn_refresh_monitors.setIcon(
             self.style().standardIcon(QStyle.StandardPixmap.SP_BrowserReload)
         )
-        self.btn_refresh_monitors.setIconSize(QSize(18, 18))
+        self.btn_refresh_monitors.setIconSize(QSize(CONTROL["refresh_icon"], CONTROL["refresh_icon"]))
         self.btn_output = QPushButton(_("Abrir"))
         self.btn_close_output = QPushButton(_("Fechar"))
-        self.btn_refresh_monitors.setFixedSize(36, 36)
+        self.btn_refresh_monitors.setFixedSize(CONTROL["refresh_size"], CONTROL["refresh_size"])
         for _btn in (self.btn_output, self.btn_close_output):
-            _btn.setMinimumHeight(32)
+            _btn.setMinimumHeight(CONTROL["monitor_height"])
         monitor_row.addWidget(self.combo_monitors, 1)
         monitor_row.addWidget(self.btn_refresh_monitors)
         monitor_row.addWidget(self.btn_output)
@@ -103,15 +115,15 @@ class MainWindow(QMainWindow):
 
         self.presets_container = QWidget()
         presets_layout = QGridLayout()
-        presets_layout.setContentsMargins(10, 10, 10, 10)
-        presets_layout.setHorizontalSpacing(8)
-        presets_layout.setVerticalSpacing(8)
+        presets_layout.setContentsMargins(*CONTROL["preset_margins"])
+        presets_layout.setHorizontalSpacing(CONTROL["spacing"])
+        presets_layout.setVerticalSpacing(CONTROL["spacing"])
 
         preset_minutes = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 45, 60]
         self.preset_buttons = []
         for index, minutes in enumerate(preset_minutes):
             button = QPushButton(f"{minutes}{_(' min')}")
-            button.setMinimumHeight(38)
+            button.setMinimumHeight(CONTROL["preset_height"])
             row = index // 6
             col = index % 6
             presets_layout.addWidget(button, row, col)
@@ -120,50 +132,50 @@ class MainWindow(QMainWindow):
         self.presets_container.setLayout(presets_layout)
 
         manual_row = QHBoxLayout()
-        manual_row.setSpacing(8)
+        manual_row.setSpacing(CONTROL["spacing"])
         self.spin_minutes = QSpinBox()
         self.spin_minutes.setRange(0, 180)
-        self.spin_minutes.setValue(10)
-        self.spin_minutes.setSuffix(" min")
+        self.spin_minutes.setValue(DEFAULT_MINUTES)
+        self.spin_minutes.setSuffix(_(" min"))
         self.spin_minutes.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.spin_minutes.setMinimumHeight(38)
+        self.spin_minutes.setMinimumHeight(CONTROL["preset_height"])
         self.spin_minutes.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
         self.btn_minus = QPushButton("−")
-        self.btn_minus.setFixedSize(44, 38)
+        self.btn_minus.setFixedSize(CONTROL["step_width"], CONTROL["preset_height"])
         self.btn_plus = QPushButton("+")
-        self.btn_plus.setFixedSize(44, 38)
+        self.btn_plus.setFixedSize(CONTROL["step_width"], CONTROL["preset_height"])
         self.btn_set = QPushButton(_("Definir"))
-        self.btn_set.setMinimumHeight(38)
+        self.btn_set.setMinimumHeight(CONTROL["preset_height"])
         manual_row.addWidget(self.spin_minutes, 1)
         manual_row.addWidget(self.btn_minus)
         manual_row.addWidget(self.btn_plus)
         manual_row.addWidget(self.btn_set)
 
         controls_row = QHBoxLayout()
-        controls_row.setSpacing(8)
+        controls_row.setSpacing(CONTROL["spacing"])
 
         self.btn_start = QPushButton(_("Iniciar"))
         self.btn_stop = QPushButton(_("Parar"))
         self.btn_reset = QPushButton(_("Repor"))
 
         for btn in (self.btn_start, self.btn_stop, self.btn_reset):
-            btn.setMinimumHeight(46)
+            btn.setMinimumHeight(CONTROL["control_height"])
             controls_row.addWidget(btn)
 
         self.btn_attention = QPushButton(_("Chamar Atenção"))
-        self.btn_attention.setMinimumHeight(46)
+        self.btn_attention.setMinimumHeight(CONTROL["control_height"])
 
         footer = QHBoxLayout()
         self.label_clock = QLabel("00:00:00")
         self.label_date = QLabel("01/01/2000")
         self.btn_dark_mode = QPushButton()
-        self.btn_dark_mode.setFixedHeight(28)
+        self.btn_dark_mode.setFixedHeight(CONTROL["footer_height"])
 
         # Seletor de idioma
         self.combo_language = QComboBox()
-        self.combo_language.setFixedHeight(28)
-        self.combo_language.setMinimumWidth(120)
-        for lang_code, lang_name in LANGUAGE_NAMES.items():
+        self.combo_language.setFixedHeight(CONTROL["footer_height"])
+        self.combo_language.setMinimumWidth(CONTROL["language_width"])
+        for lang_code, lang_name in ConfigManager.LANGUAGE_NAMES.items():
             self.combo_language.addItem(lang_name, lang_code)
 
         self.label_clock.setAlignment(Qt.AlignmentFlag.AlignLeft)
@@ -190,6 +202,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(container)
 
     def _connect_signals(self) -> None:
+        """Liga as ações do utilizador e as alterações de monitores."""
         self.btn_output.clicked.connect(self.setup_monitors)
         self.btn_close_output.clicked.connect(self.close_output_window)
         self.btn_refresh_monitors.clicked.connect(self._populate_monitors)
@@ -215,17 +228,17 @@ class MainWindow(QMainWindow):
         menubar = self.menuBar()
 
         # Menu Ajuda
-        help_menu = menubar.addMenu(_("Ajuda"))
+        self.help_menu = menubar.addMenu(_("Ajuda"))
 
         # Ação: Sobre
-        self.about_action = help_menu.addAction(_("Sobre Chronometer"))
+        self.about_action = self.help_menu.addAction(_("Sobre Chronometer"))
         self.about_action.triggered.connect(self.show_about_dialog)
 
         # Separador
-        help_menu.addSeparator()
+        self.help_menu.addSeparator()
 
         # Ação: Website
-        self.website_action = help_menu.addAction(_("Visitar Website"))
+        self.website_action = self.help_menu.addAction(_("Visitar Website"))
         self.website_action.triggered.connect(self._open_website)
 
     def show_about_dialog(self) -> None:
@@ -239,6 +252,7 @@ class MainWindow(QMainWindow):
 
     @staticmethod
     def _get_screen_id(screen) -> str:
+        """Identifica um monitor por metadados ou pela geometria disponível."""
         metadata = (
             screen.serialNumber(),
             screen.manufacturer(),
@@ -257,6 +271,7 @@ class MainWindow(QMainWindow):
 
     @classmethod
     def _get_screen_id_in_list(cls, screen, screens, native_displays=None) -> str:
+        """Prefere a identidade Windows e distingue monitores com metadados iguais."""
         native_display = find_native_display(screen.name(), native_displays or [])
         if native_display is not None:
             return f"windows:{native_display.identifier}"
@@ -277,13 +292,14 @@ class MainWindow(QMainWindow):
         )
 
     def _populate_monitors(self) -> None:
+        """Atualiza a lista, preservando a seleção quando ainda existe."""
         selected_id = self.combo_monitors.currentData()
         self.combo_monitors.clear()
         screens = QApplication.screens()
         native_displays = enumerate_native_displays()
         for screen in screens:
             geo = screen.geometry()
-            name = screen.name() or "Monitor"
+            name = screen.name() or _("Monitor")
             native_display = find_native_display(screen.name(), native_displays)
             monitor_id = self._get_screen_id_in_list(
                 screen, screens, native_displays
@@ -309,6 +325,7 @@ class MainWindow(QMainWindow):
         )
 
     def _handle_screen_removed(self, removed_screen) -> None:
+        """Atualiza os monitores e tenta recolocar uma saída que estava visível."""
         output_screen = self.output_window.screen()
         output_was_visible = self.output_window.isVisible()
         output_was_removed = output_screen is removed_screen
@@ -337,7 +354,7 @@ class MainWindow(QMainWindow):
             self.combo_monitors.setCurrentIndex(0)
 
     def setup_monitors(self) -> None:
-        """Preenche a lista de monitores e seleciona o último utilizado."""
+        """Abre a saída no monitor selecionado e guarda a sua identidade."""
         monitor_id = self.combo_monitors.currentData()
         screens = QApplication.screens()
         native_displays = enumerate_native_displays()
@@ -372,31 +389,33 @@ class MainWindow(QMainWindow):
     def load_preset(self, minutes: int) -> None:
         """Carrega uma duração (em minutos) e atualiza os ecrãs."""
         self.stop_countdown()
-        self.loaded_preset_seconds = minutes * 60
-        self.remaining_seconds = self.loaded_preset_seconds
+        self.countdown.load(minutes * 60)
         self.spin_minutes.setValue(minutes)
         self._update_displays()
 
     def _apply_manual_time(self) -> None:
+        """Carrega e para a duração indicada no campo manual."""
         self.load_preset(self.spin_minutes.value())
 
     def start_countdown(self) -> None:
         """Inicia a contagem decrescente."""
-        if self.remaining_seconds <= 0 < self.loaded_preset_seconds:
-            self.remaining_seconds = self.loaded_preset_seconds
+        self.countdown.start()
+        self._update_displays()
 
         self.output_window.stop_attention_flash()
         self.countdown_timer.start()
 
     def stop_countdown(self) -> None:
         """Para a contagem decrescente."""
+        self.countdown.pause()
         self.countdown_timer.stop()
+        self._update_displays()
 
     def reset_countdown(self) -> None:
         """Repõe o tempo da predefinição carregada."""
         self.stop_countdown()
         self.output_window.stop_attention_flash()
-        self.remaining_seconds = self.loaded_preset_seconds
+        self.countdown.reset()
         self._update_displays()
 
     def call_attention(self) -> None:
@@ -438,9 +457,10 @@ class MainWindow(QMainWindow):
 
     def _retranslate_ui(self) -> None:
         """Atualiza todos os textos da UI para o idioma atual."""
-        self.setWindowTitle(f"Chronometer v{__version__} - {_('Control')}")
+        self.setWindowTitle(f"Chronometer v{__version__} - {_('Controlo')}")
 
         # Menu e ações
+        self.help_menu.setTitle(_("Ajuda"))
         self.about_action.setText(_("Sobre Chronometer"))
         self.website_action.setText(_("Visitar Website"))
 
@@ -454,6 +474,7 @@ class MainWindow(QMainWindow):
 
         # Botão definir
         self.btn_set.setText(_("Definir"))
+        self.spin_minutes.setSuffix(_(" min"))
 
         # Controlos
         self.btn_start.setText(_("Iniciar"))
@@ -474,6 +495,7 @@ class MainWindow(QMainWindow):
         )
 
     def _apply_theme(self) -> None:
+        """Aplica os estilos centralizados ao painel de controlo."""
         s = build_control_styles(self.dark_mode)
 
         # Atualizar texto do botão de tema
@@ -501,7 +523,7 @@ class MainWindow(QMainWindow):
         for btn in (self.btn_output, self.btn_close_output):
             btn.setStyleSheet(s["monitor_btn"])
         self.btn_refresh_monitors.setStyleSheet(
-            s["monitor_btn"] + "QPushButton { padding: 0px; }"
+            s["monitor_btn"] + s["refresh"]
         )
 
         self.combo_monitors.setStyleSheet(s["combo"])
@@ -513,10 +535,11 @@ class MainWindow(QMainWindow):
         self.label_date.setStyleSheet(s["footer"])
 
     def _tick_countdown(self) -> None:
-        self.remaining_seconds -= 1
+        """Atualiza a apresentação a partir do tempo decorrido, sem contar eventos."""
         self._update_displays()
 
     def _update_displays(self) -> None:
+        """Apresenta a mesma leitura do tempo em ambas as janelas."""
         secs = self.remaining_seconds
         if secs < 0:
             minutes, seconds = divmod(-secs, 60)
@@ -525,9 +548,10 @@ class MainWindow(QMainWindow):
             minutes, seconds = divmod(secs, 60)
             text = f"{minutes:02d}:{seconds:02d}"
         self.time_main_label.setText(text)
-        self.output_window.update_time_display(self.remaining_seconds)
+        self.output_window.update_time_display(secs)
 
     def _update_datetime(self) -> None:
+        """Atualiza a hora e a data locais do painel."""
         now = QDateTime.currentDateTime()
         self.label_clock.setText(now.toString("HH:mm:ss"))
         self.label_date.setText(now.toString("dd/MM/yyyy"))

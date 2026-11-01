@@ -2,11 +2,12 @@
 Módulo para gerenciamento do ícone da aplicação.
 Fornece uma função unificada para obter o ícone em diferentes plataformas.
 """
-from pathlib import Path
 from PyQt6.QtGui import QIcon
 
+from chronometer.resources import resource_path
+
 # Caminhos para os ícones
-ICON_DIR = Path(__file__).resolve().parent / "icon"
+ICON_DIR = resource_path("icon")
 ICO_ICON_PATH = ICON_DIR / "chronometer-stopwatch-svgrepo-com.ico"
 SVG_ICON_PATH = ICON_DIR / "chronometer-stopwatch-svgrepo-com.svg"
 
@@ -17,10 +18,10 @@ def get_app_icon() -> QIcon:
     e depois o .svg (Linux) como fallback.
 
     Returns:
-        QIcon: O ícone da aplicação ou ícone padrão se nenhum estiver disponível.
+        QIcon: O ícone da aplicação ou um ícone vazio se não existir nenhum recurso.
     """
     if ICO_ICON_PATH.exists():
         return QIcon(str(ICO_ICON_PATH))
     if SVG_ICON_PATH.exists():
         return QIcon(str(SVG_ICON_PATH))
-    return QIcon()  # Ícone padrão
+    return QIcon()

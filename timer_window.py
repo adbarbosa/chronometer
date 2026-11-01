@@ -9,6 +9,7 @@ from chronometer.theme import (
     OUTPUT, TIME_DANGER_SECS, TIME_WARN_SECS,
     OUTPUT_TIMER_H_RATIO, OUTPUT_TIMER_W_RATIO,
     OUTPUT_CLOCK_RATIO, OUTPUT_CLOCK_MIN_PX,
+    OUTPUT_TIMER_DEFAULT_PX, OUTPUT_CLOCK_DEFAULT_PX,
     output_bg_style, output_clock_style, output_flash_bg, output_time_style,
 )
 from chronometer.icon_manager import get_app_icon
@@ -18,6 +19,7 @@ class TimerWindow(QWidget):
     """Janela que aparecerá no segundo monitor (Output)"""
 
     def __init__(self):
+        """Cria o visor, o relógio local e o efeito de atenção."""
         super().__init__()
         self.setWindowIcon(get_app_icon())
         self.setStyleSheet(output_bg_style())
@@ -34,8 +36,8 @@ class TimerWindow(QWidget):
         self.output_clock_timer.timeout.connect(self._update_output_clock)
         self.output_clock_timer.start()
 
-        self._timer_size = 220
-        self._clock_size = 52
+        self._timer_size = OUTPUT_TIMER_DEFAULT_PX
+        self._clock_size = OUTPUT_CLOCK_DEFAULT_PX
 
         layout = QVBoxLayout()
         self.label = QLabel("00:00")
@@ -75,6 +77,7 @@ class TimerWindow(QWidget):
         self._update_time_color(remaining_seconds)
 
     def _update_time_color(self, remaining_seconds: int) -> None:
+        """Escolhe a cor correspondente ao tempo restante."""
         if remaining_seconds < TIME_DANGER_SECS:
             color = OUTPUT["time_danger"]
         elif remaining_seconds < TIME_WARN_SECS:
@@ -86,6 +89,7 @@ class TimerWindow(QWidget):
         self._apply_time_style(color)
 
     def _apply_time_style(self, color: str) -> None:
+        """Aplica a cor e o tamanho atual ao texto da contagem."""
         self.label.setStyleSheet(output_time_style(color, self._timer_size))
 
     def start_attention_flash(self) -> None:
@@ -101,10 +105,12 @@ class TimerWindow(QWidget):
         self._restore_background()
 
     def _restore_background(self) -> None:
+        """Restaura o fundo e a cor normal após o efeito de atenção."""
         self.setStyleSheet(output_bg_style())
         self._apply_time_style(self._time_color)
 
     def _toggle_flash(self) -> None:
+        """Alterna o fundo até ao limite de eventos do efeito de atenção."""
         self._flash_ticks += 1
         if self._flash_ticks >= FLASH_MAX_TICKS:
             self.stop_attention_flash()
@@ -119,12 +125,14 @@ class TimerWindow(QWidget):
         self.flash_red = not self.flash_red
 
     def _update_output_clock(self) -> None:
+        """Apresenta a hora local no formato de 24 horas."""
         now = QDateTime.currentDateTime()
         self.clock_label.setText(now.toString("HH:mm"))
 
     def _on_clock_clicked(self, _event: QMouseEvent) -> None:
+        """Esconde a saída sem interferir com a contagem."""
         self.hide()
 
     def retranslate_ui(self) -> None:
         """Atualiza os textos da UI para o idioma atual."""
-        self.setWindowTitle(_("Timer Output"))
+        self.setWindowTitle(_("Saída do temporizador"))

@@ -1,4 +1,4 @@
-name: Pylint
+name: Checks
 
 on:
   push:
@@ -28,11 +28,9 @@ jobs:
           python -m pip install -r requirements-dev.txt
 
       - name: Analyze code with Pylint
-        run: pylint $(git ls-files '*.py')
+        run: python -m pylint *.py i18n/*.py
 
       - name: Run tests
         env:
           QT_QPA_PLATFORM: offscreen
-        run: |
-          cd ..
-          python -m pytest -q chronometer
+        run: python -m pytest -q . --ignore=.venv

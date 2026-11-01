@@ -1,53 +1,39 @@
-#!/usr/bin/env python3
-"""
-Compilador robusto de .po para .mo usando polib.
-"""
+"""Compila os catálogos dos idiomas registados usando polib."""
 
-import sys
+from collections.abc import Iterable
 from pathlib import Path
+import sys
 
-try:
-    import polib
-except ImportError:
-    print("ERRO: polib não instalado. Use: pip install polib")
-    sys.exit(1)
+import polib
+
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+from chronometer.config import ConfigManager  # pylint: disable=wrong-import-position
+
+I18N_DIR = Path(__file__).resolve().parent
 
 
-def compile_po(po_path: Path, mo_path: Path):
-    """Compila um PO para MO usando polib."""
-    print(f"Compilando {po_path.name}...", end=' ')
-
-    # Parse PO
-    po = polib.pofile(str(po_path))
-
-    # Save MO
+def compile_po(po_path: Path, mo_path: Path) -> None:
+    """Compila um PO para MO; o catálogo de origem tem de existir."""
+    catalog = polib.pofile(str(po_path))
     mo_path.parent.mkdir(parents=True, exist_ok=True)
-    po.save_as_mofile(str(mo_path))
-
-    # Contar strings (excluindo header)
-    num_entries = len([e for e in po if str(e.msgid)])
-
-    mo_size = mo_path.stat().st_size
-    print(f"✓ ({mo_size} bytes, {num_entries} mensagens)")
+    catalog.save_as_mofile(str(mo_path))
+    print(f"Compilado {po_path.name}: {len(catalog.translated_entries())} mensagens traduzidas.")
 
 
-if __name__ == '__main__':
-    i18n_dir = Path(__file__).parent
+def compile_catalogs(i18n_dir: Path = I18N_DIR, languages: Iterable[str] | None = None) -> None:
+    """Compila cada idioma registado ou a lista explícita usada por ferramentas e testes."""
+    for language in ConfigManager.LANGUAGE_NAMES if languages is None else languages:
+        compile_po(
+            i18n_dir / f"{language}.po",
+            i18n_dir / "locales" / language / "LC_MESSAGES" / "chronometer.mo",
+        )
 
-    print("Compilando traduções com polib...\n")
 
+if __name__ == "__main__":
     try:
-        compile_po(
-            i18n_dir / 'pt_PT.po',
-            i18n_dir / 'locales' / 'pt_PT' / 'LC_MESSAGES' / 'chronometer.mo'
-        )
-
-        compile_po(
-            i18n_dir / 'en_US.po',
-            i18n_dir / 'locales' / 'en_US' / 'LC_MESSAGES' / 'chronometer.mo'
-        )
-
-        print("\n✓ Compilação concluída com sucesso!")
-    except Exception as e:
-        print(f"\n✗ ERRO: {e}", file=sys.stderr)
+        compile_catalogs()
+    except (OSError, ValueError) as error:
+        print(f"Erro ao compilar traduções: {error}", file=sys.stderr)
         sys.exit(1)

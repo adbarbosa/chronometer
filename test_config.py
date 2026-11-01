@@ -7,16 +7,19 @@ import tempfile
 from functools import wraps
 from pathlib import Path
 
-# Adicionar caminho ao módulo
-sys.path.insert(0, str(Path(__file__).parent))
+import pytest
 
-from config import ConfigManager  # pylint: disable=import-error,wrong-import-position
+# Adicionar caminho ao módulo
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from chronometer.config import ConfigManager, config_directory  # pylint: disable=wrong-import-position
 
 
 def isolated_config_test(test_function):
     """Executa cada teste com um ficheiro de configuração temporário."""
     @wraps(test_function)
     def wrapper(*args, **kwargs):
+        """Substitui os caminhos reais apenas durante a execução deste teste."""
         original_dir = ConfigManager.CONFIG_DIR
         original_file = ConfigManager.CONFIG_FILE
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -72,25 +75,12 @@ def test_type_conversion():
     print(f"  ✅ Conversão bem-sucedida: string '3' → int {loaded}")
 
 
-@isolated_config_test
-def test_config_file_location():
-    """Teste: localização do ficheiro."""
-    print("\n🧪 Teste 4: Localização do ficheiro de configuração")
-
-    expected_dir = ConfigManager.CONFIG_DIR
-    expected_file = expected_dir / "config.json"
-
-    assert ConfigManager.CONFIG_DIR == expected_dir, f"Diretório incorreto: {ConfigManager.CONFIG_DIR}"
-    assert ConfigManager.CONFIG_FILE == expected_file, f"Ficheiro incorreto: {ConfigManager.CONFIG_FILE}"
-
-    print(f"  ✅ Diretório: {expected_dir}")
-    print(f"  ✅ Ficheiro: {expected_file}")
-
-    # Verificar se foi criado
-    if ConfigManager.CONFIG_FILE.exists():
-        with open(ConfigManager.CONFIG_FILE, "r", encoding="utf-8") as f:
-            content = json.load(f)
-        print(f"  ✅ Conteúdo do ficheiro: {content}")
+def test_config_file_location(monkeypatch, tmp_path):
+    """A configuração por defeito pertence à pasta pessoal, sem a ler ou alterar."""
+    monkeypatch.delenv("CHRONOMETER_CONFIG_DIR", raising=False)
+    assert config_directory() == Path.home() / ".chronometer"
+    monkeypatch.setenv("CHRONOMETER_CONFIG_DIR", str(tmp_path))
+    assert config_directory() == tmp_path
 
 
 @isolated_config_test
@@ -113,26 +103,52 @@ def test_supported_languages_match_names():
     print("✓ Idiomas suportados consistentes")
 
 
-if __name__ == "__main__":
-    print("=" * 60)
-    print("🔬 TESTES DE PERSISTÊNCIA DO CONFIGMANAGER")
-    print("=" * 60)
+@pytest.mark.parametrize("raw", ['{invalid', '[]', 'null'])
+def test_invalid_json_uses_defaults(raw, tmp_path, monkeypatch):
+    """JSON inválido ou sem objeto usa os valores por defeito sem apagar o ficheiro."""
+    path = tmp_path / "config.json"
+    path.write_text(raw, encoding="utf-8")
+    monkeypatch.setattr(ConfigManager, "CONFIG_FILE", path)
+    assert ConfigManager.get_dark_mode() is False
+    assert ConfigManager.get_language() is None
+    assert path.read_text(encoding="utf-8") == raw
 
-    try:
-        test_save_and_load()
-        test_default_value()
-        test_type_conversion()
-        test_config_file_location()
-        test_generic_get_save()
-        test_supported_languages_match_names()
-        print("\n" + "=" * 60)
-        print("✅ TODOS OS TESTES PASSARAM!")
-        print("=" * 60)
-    except AssertionError as e:
-        print(f"\n❌ TESTE FALHOU: {e}")
-        sys.exit(1)
-    except Exception as e:
-        print(f"\n❌ ERRO INESPERADO: {e}")
-        import traceback
-        traceback.print_exc()
-        sys.exit(1)
+
+def test_invalid_preference_types(tmp_path, monkeypatch):
+    """Tipos inválidos para tema e idioma não chegam à interface."""
+    path = tmp_path / "config.json"
+    path.write_text('{"dark_mode": "false", "language": 12}', encoding="utf-8")
+    monkeypatch.setattr(ConfigManager, "CONFIG_FILE", path)
+    assert ConfigManager.get_dark_mode() is False
+    assert ConfigManager.get_language() is None
+
+
+def test_failed_replace_preserves_previous_file(tmp_path, monkeypatch):
+    """Uma falha na substituição mantém o ficheiro anterior e limpa o temporário."""
+    path = tmp_path / "config.json"
+    path.write_text('{"dark_mode": false}', encoding="utf-8")
+    monkeypatch.setattr(ConfigManager, "CONFIG_DIR", tmp_path)
+    monkeypatch.setattr(ConfigManager, "CONFIG_FILE", path)
+
+    def deny_replace(_source, _destination):
+        """Simula a recusa do sistema ao substituir o ficheiro final."""
+        raise PermissionError("Substituição recusada no teste")
+
+    monkeypatch.setattr("chronometer.config.os.replace", deny_replace)
+    ConfigManager.save_dark_mode(True)
+    assert json.loads(path.read_text(encoding="utf-8")) == {"dark_mode": False}
+    assert not path.with_suffix(".json.tmp").exists()
+
+
+def test_unwritable_directory_does_not_crash(tmp_path, monkeypatch):
+    """Uma pasta que não pode ser criada não termina a aplicação."""
+    path = tmp_path / "not-a-directory"
+    path.write_text("ocupado", encoding="utf-8")
+    monkeypatch.setattr(ConfigManager, "CONFIG_DIR", path)
+    monkeypatch.setattr(ConfigManager, "CONFIG_FILE", path / "config.json")
+    ConfigManager.save_dark_mode(True)
+    assert path.read_text(encoding="utf-8") == "ocupado"
+
+
+if __name__ == "__main__":
+    sys.exit(pytest.main([__file__, "-q"]))

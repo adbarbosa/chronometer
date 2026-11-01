@@ -7,22 +7,11 @@ Idiomas suportados: pt_PT (Portugal), en_US (English)
 
 import builtins
 import gettext
-import sys
-from pathlib import Path
 
 from PyQt6.QtCore import QLocale
+from chronometer.resources import resource_path
 
-# Localizar pasta de traduções
-if getattr(sys, 'frozen', False):
-    # Se estiver a correr como um executável compilado (PyInstaller)
-    # O PyInstaller extrai os ficheiros para uma pasta temporária definida em sys._MEIPASS
-    BASE_DIR = Path(sys._MEIPASS)  # pylint: disable=protected-access
-else:
-    # Se estiver a correr como script Python normal
-    # O __file__ está em chronometer/i18n/__init__.py, por isso o parent.parent é a raiz
-    BASE_DIR = Path(__file__).resolve().parent.parent
-
-LOCALE_DIR = BASE_DIR / "i18n" / "locales"
+LOCALE_DIR = resource_path("i18n", "locales")
 
 # Idioma atualmente ativo
 _current_language: str | None = None
@@ -30,8 +19,8 @@ _current_language: str | None = None
 
 def _get_system_language() -> str:
     """
-    Retorna o idioma do sistema no formato 'pt_PT' ou 'en_US'.
-    Fallback para 'pt_PT' se não conseguir determinar.
+    Normaliza as variantes de português e inglês e conserva outros códigos regionais.
+    Usa 'pt_PT' quando o idioma do sistema não pode ser determinado.
     """
     try:
         lang = QLocale.system().name()
@@ -61,7 +50,7 @@ def setup_i18n(lang: str | None = None) -> str:
         lang: Idioma no formato 'pt_PT', 'en_US', etc. Se None, detecta do sistema.
 
     Returns:
-        O idioma efetivamente configurado.
+        O código pedido ou detetado, mesmo quando falta o catálogo e se usam os textos originais.
     """
     global _current_language  # pylint: disable=global-statement
 

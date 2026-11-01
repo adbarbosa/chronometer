@@ -3,5 +3,6 @@ __pycache__/
 build/
 dist/
 .venv/
+.pytest_cache/
 *.spec
 !Chronometer.spec

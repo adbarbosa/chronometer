@@ -4,7 +4,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Chronometer 0.3.0\n"
+"Project-Id-Version: Chronometer 0.5.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-04-25 11:30+0000\n"
 "PO-Revision-Date: 2026-04-25 11:30+0000\n"
@@ -16,111 +16,122 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: app.py
-msgid "Control"
+#: main_window.py:460
+msgid "Controlo"
 msgstr "Control"
 
-#: main_window.py
+#: main_window.py:101 main_window.py:468
 msgid "Abrir"
 msgstr "Open"
 
-#: main_window.py
+#: about_dialog.py:109 main_window.py:102 main_window.py:469
 msgid "Fechar"
 msgstr "Close"
 
-#: main_window.py
+#: main_window.py:125 main_window.py:139 main_window.py:473 main_window.py:477
 msgid " min"
 msgstr " min"
 
-#: main_window.py
+#: main_window.py:147 main_window.py:476
 msgid "Definir"
 msgstr "Set"
 
-#: main_window.py
+#: main_window.py:157 main_window.py:480
 msgid "Iniciar"
 msgstr "Start"
 
-#: main_window.py
+#: main_window.py:158 main_window.py:481
 msgid "Parar"
 msgstr "Stop"
 
-#: main_window.py
+#: main_window.py:159 main_window.py:482
 msgid "Repor"
 msgstr "Reset"
 
-#: main_window.py
+#: main_window.py:165 main_window.py:483
 msgid "Chamar Atenção"
 msgstr "Call Attention"
 
-#: main_window.py
+#: main_window.py:489 main_window.py:505
 msgid "Modo Escuro"
 msgstr "Dark Mode"
 
-#: main_window.py
+#: main_window.py:487 main_window.py:503
 msgid "Modo Claro"
 msgstr "Light Mode"
 
-#: main_window.py
+#: main_window.py:324 main_window.py:494
 msgid "{count} monitor(es) detectado(s)"
 msgstr "{count} monitor(s) detected"
 
-#: main_window.py
+#: main_window.py:379
 msgid "Aberto em: {monitor_name}"
 msgstr "Opened in: {monitor_name}"
 
-#: main_window.py
+#: main_window.py:428
 msgid "Output fechado."
 msgstr "Output closed."
 
-#: timer_window.py
-msgid "Timer Output"
+#: timer_window.py:138
+msgid "Saída do temporizador"
 msgstr "Timer Output"
 
-#: main_window.py
+#: main_window.py:231 main_window.py:463
 msgid "Ajuda"
 msgstr "Help"
 
-#: main_window.py
+#: main_window.py:234 main_window.py:464
 msgid "Sobre Chronometer"
 msgstr "About Chronometer"
 
-#: main_window.py
+#: main_window.py:241 main_window.py:465
 msgid "Visitar Website"
 msgstr "Visit Website"
 
-#: about_dialog.py
+#: about_dialog.py:93
 msgid "Sobre"
 msgstr "About"
 
-#: about_dialog.py
+#: about_dialog.py:94
 msgid "Cronómetro para Apresentações"
 msgstr "Timer for Presentations"
 
-#: about_dialog.py
-msgid "Um cronómetro simples e eficiente para gerir tempos de apresentações com painel de controlo e visor em segundo monitor."
-msgstr "A simple and efficient timer to manage presentation times with control panel and display on a second monitor."
+#: about_dialog.py:96
+msgid ""
+"Um cronómetro simples e eficiente para gerir tempos de apresentações com "
+"painel de controlo e visor em segundo monitor."
+msgstr ""
+"A simple and efficient timer to manage presentation times with control panel"
+" and display on a second monitor."
 
-#: about_dialog.py
+#: about_dialog.py:99
 msgid "Funcionalidades:"
 msgstr "Features:"
 
-#: about_dialog.py
-msgid "Presets de duração (1 a 5 minutos, depois 10, 15, 20, 25, 30, 45 e 60 minutos)"
-msgstr "Duration presets (1 to 5 minutes, then 10, 15, 20, 25, 30, 45, and 60 minutes)"
+#: about_dialog.py:101
+msgid ""
+"Presets de duração (1 a 5 minutos, depois 10, 15, 20, 25, 30, 45 e 60 "
+"minutos)"
+msgstr ""
+"Duration presets (1 to 5 minutes, then 10, 15, 20, 25, 30, 45, and 60 "
+"minutes)"
 
-#: about_dialog.py
+#: about_dialog.py:102
 msgid "Suporte a múltiplos monitores com fullscreen"
 msgstr "Support for multiple monitors with fullscreen"
 
-#: about_dialog.py
+#: about_dialog.py:103
 msgid "Avisos visuais por cor (branco → laranja → vermelho)"
 msgstr "Visual warnings by color (white → orange → red)"
 
-#: about_dialog.py
+#: about_dialog.py:104
 msgid "Internacionalização (Português e Inglês)"
 msgstr "Internationalization (Portuguese and English)"
 
-#: about_dialog.py
+#: about_dialog.py:108
 msgid "Abrir no GitHub"
 msgstr "Open on GitHub"
 
+#: main_window.py:302
+msgid "Monitor"
+msgstr "Monitor"

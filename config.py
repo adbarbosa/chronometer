@@ -6,10 +6,16 @@ from pathlib import Path
 from typing import Any
 
 
-class ConfigManager:
-    """Gerencia persistência de configurações em ficheiro JSON."""
+def config_directory() -> Path:
+    """Permite isolar execuções de verificação sem alterar a pasta pessoal."""
+    override = os.environ.get("CHRONOMETER_CONFIG_DIR")
+    return Path(override).expanduser() if override else Path.home() / ".chronometer"
 
-    CONFIG_DIR = Path.home() / ".chronometer"
+
+class ConfigManager:
+    """Gere a persistência de preferências num ficheiro JSON."""
+
+    CONFIG_DIR = config_directory()
     CONFIG_FILE = CONFIG_DIR / "config.json"
 
     # Valores por defeito
@@ -36,17 +42,14 @@ class ConfigManager:
     @classmethod
     def _load_config(cls) -> dict[str, Any]:
         """Carrega configurações do ficheiro JSON."""
-        cls._ensure_config_dir()
-
-        if not cls.CONFIG_FILE.exists():
-            return cls.DEFAULTS.copy()
-
         try:
+            if not cls.CONFIG_FILE.exists():
+                return cls.DEFAULTS.copy()
             with open(cls.CONFIG_FILE, "r", encoding="utf-8") as f:
                 config = json.load(f)
                 if not isinstance(config, dict):
                     raise ValueError("o conteúdo não é um objeto JSON")
-                # Mesclar com defaults para garantir que chaves novas existem
+                # Completar chaves novas sem eliminar preferências desconhecidas.
                 defaults = cls.DEFAULTS.copy()
                 defaults.update(config)
                 return defaults
@@ -57,10 +60,10 @@ class ConfigManager:
     @classmethod
     def _save_config(cls, config: dict[str, Any]) -> None:
         """Guarda configurações em ficheiro JSON."""
-        cls._ensure_config_dir()
         temporary_file = cls.CONFIG_FILE.with_suffix(".json.tmp")
 
         try:
+            cls._ensure_config_dir()
             with open(temporary_file, "w", encoding="utf-8") as f:
                 json.dump(config, f, indent=2, ensure_ascii=False)
                 f.flush()
@@ -70,7 +73,8 @@ class ConfigManager:
             print(f"⚠️ Erro ao guardar configurações: {e}")
             try:
                 temporary_file.unlink()
-            except FileNotFoundError:
+            except OSError:
+                # A limpeza é uma tentativa: a pasta também pode estar inacessível.
                 pass
 
     @classmethod
@@ -115,7 +119,8 @@ class ConfigManager:
     @classmethod
     def get_language(cls) -> str | None:
         """Obtém o idioma configurado (None = usar idioma do sistema)."""
-        return cls.get("language", None)
+        language = cls.get("language", None)
+        return language if isinstance(language, str) else None
 
     @classmethod
     def save_language(cls, lang: str | None) -> None:
@@ -127,7 +132,8 @@ class ConfigManager:
     @classmethod
     def get_dark_mode(cls) -> bool:
         """Obtém a preferência de tema escuro."""
-        return cls.get("dark_mode", False)
+        dark_mode = cls.get("dark_mode", False)
+        return dark_mode if isinstance(dark_mode, bool) else cls.DEFAULTS["dark_mode"]
 
     @classmethod
     def save_dark_mode(cls, enabled: bool) -> None:
