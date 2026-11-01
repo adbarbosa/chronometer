@@ -1,6 +1,6 @@
 # Validation record
 
-This record describes checks performed during the documentation and behavior update on **2026-11-01**. It is evidence for that checkout and environment, not a guarantee about every platform or future change. Repeat the relevant checks after editing the application.
+This record describes checks performed during the robustness and regression update on **2026-11-01**. It is evidence for that checkout and environment, not a guarantee about every platform or future change. Repeat the relevant checks after editing the application.
 
 ## Local environment
 
@@ -9,12 +9,13 @@ This record describes checks performed during the documentation and behavior upd
 | Operating system | Linux |
 | Python | 3.12.3 |
 | PyQt6 | 6.11.0 |
+| Qt runtime / PyQt6 SIP | 6.11.0 / 13.11.1 |
 | pytest | 9.1.1 |
 | Pylint | 4.1.2 |
 | polib | 1.2.0 |
 | PyInstaller | 6.20.0 |
 
-An existing virtual environment was used. A clean online installation of all dependencies was not repeated. The configured GitHub Actions matrix targets Linux with Python 3.10, 3.11 and 3.12; editing that workflow is not evidence that a remote run has completed.
+An existing virtual environment was used. A clean online installation of all dependencies was not repeated. The listed runtime/development versions are now pinned in the requirements files. The configured GitHub Actions matrix targets Linux and Windows with Python 3.10, 3.11 and 3.12, plus packaged build/startup jobs on both systems with Python 3.12. Editing that workflow is not evidence that a remote run has completed.
 
 ## Automated checks
 
@@ -28,15 +29,15 @@ python -m pylint "*.py" "i18n/*.py"
 git diff --check
 ```
 
-Results: **31 tests passed**, **Pylint 10.00/10**, and no whitespace errors. Tests were also run through the older parent-directory invocation. Repeating catalog update/compilation without changes produced identical catalog bytes. Local documentation paths and internal heading links were checked.
+Results: **81 tests passed**, **Pylint 10.00/10**, and no whitespace errors. Tests were also run through the older parent-directory invocation. Repeating catalog update/compilation without changes produced identical catalog bytes. Local documentation paths and internal heading links were checked.
 
-The suite's actual scope is listed in [Contributing](../CONTRIBUTING.md#what-the-automated-tests-cover). In particular, the language checks now execute under pytest, and the additional-language test creates and compiles a temporary catalog without changing the supported production languages.
+The suite's actual scope is listed in [Contributing](../CONTRIBUTING.md#what-the-automated-tests-cover). Regressions now include concurrent writers, bounded lock failure, invalid/non-finite preferences, effective-language fallback, contrast while flashing and resizing, output visibility/status, explicit screen association, QObject destruction, invalid-icon fallback and startup-check process cleanup. The additional-language test creates and compiles a temporary catalog without changing the supported production languages.
 
 The direct entry point was also started from a fresh bash shell after environment activation, and the module entry point was started from the parent folder. Both stayed running during short `offscreen` startup checks with temporary preferences and no traceback.
 
 ## Visual checks
 
-The control panel, output and About dialog were rendered with Qt's `offscreen` backend and temporary preferences. English/light and Portuguese/dark panel/About captures were inspected for legibility and text clipping. The README's two images show the English control panel and an output with 45 seconds remaining. Example clock/date labels were set for those images.
+The control panel, output and About dialog were rendered with Qt's `offscreen` backend and temporary preferences. English/light and Portuguese/dark panel/About captures were inspected for legibility and text clipping. A real held preference lock was used to trigger and inspect the nonmodal save-failure notice. The white attention phase was also inspected after a time update. The README's two images show the English control panel and an output with 45 seconds remaining. Example clock/date labels were set for those images.
 
 This confirms rendering in the local test backend. It does not establish physical-screen placement, operating-system window decorations or font availability on another machine.
 
@@ -50,7 +51,7 @@ The built executable was launched by absolute path from a temporary directory ou
 - `CHRONOMETER_CONFIG_DIR` pointing at temporary preferences;
 - an English/dark preference file.
 
-It remained running for a five-second startup check without a Python traceback and was then terminated by the check harness. Its temporary preference file was unchanged. The archive's SVG, ICO and Portuguese/English MO bytes matched the current source resources.
+The documented command `python smoke_check.py dist/Chronometer --seconds 5` completed successfully. The process remained running for five seconds without a Python traceback and was then terminated by the checker. Its working, preference and extraction directories were temporary and removed afterwards. The archive's SVG, ICO and Portuguese/English MO bytes matched the current source resources.
 
 This was a startup and bundle-content check. Interactive full-screen behavior and preference changes in the binary were not exercised. Follow the [distribution checklist](distribution.md#verify-a-build-outside-the-source-folder) on a desktop before distributing a release.
 

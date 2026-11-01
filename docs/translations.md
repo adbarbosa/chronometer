@@ -15,6 +15,10 @@ Chronometer uses **gettext**, a system that looks up an original message and ret
 
 `pt_PT` means Portuguese/Portugal; `en_US` means English/United States. `ConfigManager.LANGUAGE_NAMES` in `config.py` is the registration list. Tools process that list, and the app uses it for the language selector. A catalog file alone does not register a selectable language.
 
+The app normalizes saved language codes before loading them. An empty, whitespace-only, unsupported or wrongly typed saved value means automatic selection. Automatic detection maps Portuguese variants to `pt_PT` and English variants to `en_US`; another unregistered system language uses Portuguese.
+
+For a registered language, the app tries to load its compiled catalog. If the file is missing or invalid, it tries Portuguese and finally the original Portuguese messages. `setup_i18n()` and `get_current_language()` report the language actually applied, not a failed request. The selector follows that effective language. This avoids an English selection remaining visible while the fallback interface is Portuguese.
+
 ## Change an existing message
 
 ### 1. Edit the original message
@@ -71,7 +75,7 @@ python -m pytest -q . --ignore=.venv
 
 **Expected result:** a `Compilado <language>.po` line for every registered language, followed by passing tests. The compiler reports errors if a registered PO is absent or cannot be read. The tests check source/template/catalog coverage, placeholder names, unfinished translations, runtime loading and MO correspondence.
 
-Compilation alone does not translate empty entries. Gettext can fall back to original strings for missing translations; the tests deliberately require registered catalogs to be complete.
+Compilation alone does not translate empty entries. Gettext can fall back to original strings for individual missing translations; the tests deliberately require registered catalogs to be complete. Missing or corrupt whole catalogs also have runtime fallback tests, but a fallback is not a replacement for delivering complete compiled resources.
 
 ### 5. Check the interface and review files
 
@@ -111,6 +115,7 @@ Adding `pt_BR` or another Portuguese/English variant makes it selectable explici
 | MO mismatch test fails | Run the compiler and include the regenerated binary in the change. |
 | Coverage or placeholder test fails | Update the catalogs, complete translations and preserve the source's named fields. |
 | The interface remains unchanged | Restart after code/catalog maintenance, select the intended language, and check the saved language preference. Built executables contain the catalogs present at build time, so rebuild them too. |
-| Original Portuguese appears for an unsupported locale | This is the fallback when its catalog is missing. Select a registered language or add that locale. |
+| Portuguese appears instead of the requested language | Confirm the code is registered and its MO is present and valid. Unknown system languages use Portuguese; a registered language with a missing or corrupt catalog also falls back to Portuguese, and the selector reflects that result. Rebuild executables after repairing bundled catalogs. |
+| A blank saved language behaves unexpectedly | Blank and whitespace-only values use automatic detection. Set a registered code through the selector to make an explicit choice, or use `null` to keep automatic detection. |
 
 For runtime selection and the `language: null` preference, see [Preferences](../README.md#preferences).

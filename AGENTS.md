@@ -30,6 +30,7 @@ If `.venv` exists, activate it instead of recreating it. Windows CMD and Git Bas
 | Extract messages and merge catalogs | `python i18n/update.py` |
 | Compile registered translations | `python i18n/compile.py` |
 | Build current platform's executable | `python build.py` |
+| Check bundled resources and startup | `python smoke_check.py dist/Chronometer` (Windows: `dist/Chronometer.exe`) |
 | Check whitespace | `git diff --check` |
 
 The lint patterns cover current root and `i18n` modules. Extend them and CI if adding another Python source directory. The older `git ls-files '*.py'` command omits untracked files, so it cannot by itself validate newly created modules.
@@ -47,7 +48,7 @@ Tests default to Qt's `offscreen` backend if none is set. On Linux, an explicit 
 | Controls and output | `main_window.py`, `timer_window.py`, `about_dialog.py` |
 | Visual values and styles | `theme.py` |
 | Preferences | `config.py` |
-| Display identity | Monitor helpers in `main_window.py`, `windows_displays.py` |
+| Display identity and placement | `displays.py`, `windows_displays.py`; coordinated by `main_window.py` |
 | Icons and resource roots | `icon_manager.py`, `resources.py` |
 | Translations | `i18n/`, registered in `ConfigManager.LANGUAGE_NAMES` |
 | Packaging | `build.py`; generated output in `build/` and `dist/` |
@@ -58,13 +59,13 @@ Read [Architecture](docs/architecture.md) before changing state, resource lookup
 
 - Startup loads ten minutes and remains stopped. Manual field edits take effect only after Set; choosing a preset stops and loads it.
 - `Countdown` owns elapsed state. Use its monotonic reading, not the number of Qt notifications. Preserve fractional pause/resume, overtime and restart of an expired positive duration.
-- Read remaining time once per display update and send that same reading to both windows. The output must not run an independent countdown.
-- Hiding output, including clicking its smaller clock, does not pause. Reset stops the countdown and attention effect. Closing the panel closes both windows.
+- Read remaining time once per display update and send that same reading to both windows. The output must not run an independent countdown. Its normal warning color must not replace the current attention contrast during time updates or resizing.
+- Hiding output, including clicking its smaller clock or closing through the OS, does not pause and must update the panel status. Reset stops the countdown and attention effect. Closing the panel stops its timers and closes both windows. Destroying the panel also disposes of its output; bind application-wide signals to QObject receiver slots instead of lambdas capturing widgets.
 - Initialize gettext with `setup_i18n()` before constructing UI objects that use `_()`. A `QApplication` must exist before widgets are created.
-- A language change refreshes controls, menu and output title. About uses the current panel theme when opened. The ordinary output remains black.
+- A language change refreshes controls, menu, output title and the effective selector. Blank or invalid saved codes use automatic selection; missing/corrupt catalogs fall back to Portuguese and report that effective language. About uses the current panel theme when opened. The ordinary output remains black.
 - Prefer saved monitor identity to the legacy index. Preserve native Windows identity, repeated-metadata disambiguation and missing-monitor fallback. Do not replace identity with a list index.
 - Guard Windows APIs by platform. Linux tests must not execute native Windows calls.
-- Preserve temporary-file writing, flush/fsync and `os.replace` for preferences. A failed save must not truncate the last valid file.
+- Preserve a unique same-directory temporary file, flush/fsync and `os.replace` for preferences. Hold QLockFile across the entire read–normalize–update–write operation with bounded wait; do not bypass it when adding save methods. Public saves return a boolean, and callers must show a nonblocking failure indication. A failed save must not truncate the last valid file.
 - Do not read or modify personal preferences for tests or screenshots. Fixtures must override both `CONFIG_DIR` and `CONFIG_FILE`. For standalone experiments/build checks, set `CHRONOMETER_CONFIG_DIR` to a fresh temporary folder before starting the process.
 - Use `resources.resource_path()` for bundled data. Frozen data lives under the PyInstaller extraction root, not a source working directory.
 
@@ -105,4 +106,4 @@ The authoritative app version is `__version__` in `__init__.py`. Change it only 
 6. Update the appropriate user/developer/architecture guide. Check local links and follow changed command sequences literally.
 7. Review `git diff`, new files and `git diff --check`. State changes, evidence and material limitations in the final response.
 
-Use the [validation record](docs/validation.md) to distinguish automated, simulated, visual and physical checks. Development is on Linux. Do not claim Windows CMD/Git Bash, Smart App Control, native Windows display APIs or physical multi-monitor placement have been verified unless they actually were. A configured GitHub Actions matrix is not evidence of a remote run.
+Use the [validation record](docs/validation.md) to distinguish automated, simulated, visual and physical checks. Local verification is on Linux; CI is configured for Linux and Windows. Do not claim Windows CMD/Git Bash, Smart App Control, native Windows display APIs or physical multi-monitor placement have been verified unless they actually were. A configured GitHub Actions matrix is not evidence of a remote run.

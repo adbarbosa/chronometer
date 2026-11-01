@@ -106,6 +106,30 @@ Verify:
 
 Repeat on a machine representative of the intended target, including its display arrangement. A short `offscreen` launch is useful for startup checks in automation, but does not validate interactive behavior or physical monitor placement. Record exactly which level was checked in [Validation](validation.md).
 
+## Automated bundle and startup check
+
+After building, run the checker from the repository root with the development environment active.
+
+**Linux:**
+
+```bash
+python smoke_check.py dist/Chronometer --seconds 5
+```
+
+**Windows CMD or Git Bash:**
+
+```text
+python smoke_check.py dist/Chronometer.exe --seconds 5
+```
+
+**Expected result:** the checker confirms the bundled resources, observes that the process stays running for the requested interval, terminates it and exits with code zero. Missing/outdated resources, an early process exit or a Python traceback make the command fail.
+
+The checker compares the SVG, ICO and both production MO files with the source copies, accepting archive path separators from either operating system. It starts the executable by absolute path from a new temporary working directory, selects `offscreen` and creates isolated preferences. It also confines onefile extraction to a temporary directory. It terminates the child process tree and removes the temporary folders afterwards.
+
+Use `--seconds` to choose a longer observation interval and `--source-root` to point to the source tree whose resources should match. A process that remains alive is not proof that every control works: this is a startup/content check, not an interactive, physical-monitor or portability check. Continue to use the desktop checklist above.
+
+CI is configured to run tests/lint on Linux and Windows with Python 3.10–3.12 and to build/check executables on both systems with Python 3.12. Check the remote workflow result before claiming those jobs have passed; configuring them does not execute them locally.
+
 ## Install a Linux desktop launcher
 
 The bundled `.desktop` file is a launcher description used by desktop environments. It calls an executable named `Chronometer` from the desktop session's `PATH` and uses an icon with the matching installed name.

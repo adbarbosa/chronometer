@@ -6,7 +6,7 @@ This guide explains the application to a developer who has not used Qt or this r
 
 Qt runs an **event loop**: it waits for events such as a button click, a display change or a timer notification, then calls the connected Python function. A connection between an event and a function is called a **signal/slot connection**.
 
-Chronometer has one `QApplication`, one control panel (`MainWindow`) and one output (`TimerWindow`). The control panel coordinates actions. Its `Countdown` object owns the countdown state. The output displays a reading sent by the panel; it never subtracts time independently.
+Chronometer has one `QApplication`, one control panel (`MainWindow`) and one output (`TimerWindow`). The control panel coordinates actions. Its `Countdown` object owns the countdown state. A `DisplayManager` reads available monitors and places the output. The output displays a reading sent by the panel; it never subtracts time independently.
 
 ```text
 __main__.py -> app.main()
@@ -14,10 +14,11 @@ __main__.py -> app.main()
                  +-> configuration -> language setup -> QApplication
                                                           |
                                                        MainWindow
-                                                       /        \
-                                                  Countdown   TimerWindow
-                                                       \        /
-                                                     same reading
+                                                          |
+                         +--------------------------------+------------------+
+                         |                                |                  |
+                     Countdown                     DisplayManager       TimerWindow
+                    measures time                   selects screen      renders time
 ```
 
 There is no server, database or network connection involved in timing. Opening the project website delegates to the operating system's browser.
@@ -37,16 +38,18 @@ chronometer/
 ├── about_dialog.py       # Project information, using the panel's theme
 ├── theme.py              # Palettes, dimensions and stylesheet builders
 ├── config.py             # JSON preferences and safe replacement
-├── windows_displays.py   # Native Windows monitor metadata
+├── displays.py           # Monitor snapshot, identity, selection and placement
+├── windows_displays.py   # Native Windows monitor interfaces
 ├── resources.py          # Source/frozen resource root
 ├── icon_manager.py       # Shared icon loading
 ├── build.py              # Supported PyInstaller build
+├── smoke_check.py        # Isolated executable startup and bundle-content check
 ├── conftest.py           # Isolated Qt test fixtures
 ├── test_*.py             # Countdown, UI, preferences and resource tests
 ├── i18n/                 # Translation runtime, tools, catalogs and tests
 ├── icon/                 # SVG and ICO artwork
 ├── docs/                 # Technical guides, validation and screenshots
-├── .github/workflows/    # Linux Pylint and pytest configuration
+├── .github/workflows/    # Linux/Windows checks, builds and startup smoke checks
 ├── chronometer.desktop   # Linux launcher metadata
 └── Chronometer.spec      # Legacy generated artifact; not a build input
 ```
@@ -85,42 +88,67 @@ The local clock and date use `QDateTime` separately. They do not determine count
 
 ## Window lifetime and attention
 
-`MainWindow` keeps a reference to one `TimerWindow`. Hiding the output leaves the model and its update timer running. The output can be shown again without restarting the countdown. Closing the panel closes the output and the application session.
+`MainWindow` keeps a reference to one `TimerWindow`. Hiding the output leaves the model and its update timer running. The output can be shown again without restarting the countdown. Closing the panel stops its timers, closes the output and ends the application session.
 
-The smaller clock label handles mouse clicks and hides the output. The large countdown label does not have that behavior.
+Application-wide monitor signals are connected to bound Qt slots on the panel, so destroying that receiver disconnects the callbacks. The panel's destruction also schedules the output for deletion. Test fixtures explicitly dispose of both windows and process deferred deletion events before restoring their temporary state; closing a window alone does not necessarily destroy its Qt object.
+
+The smaller clock label handles mouse clicks and hides the output. The large countdown label does not have that behavior. Output show/hide events emit a visibility signal. The panel uses that signal to rebuild its status text, so clicking the clock or closing the output through the window system cannot leave an incorrect “Opened in…” message.
+
+The pending monitor-list selection and the identity of the currently opened monitor are stored separately. Changing the selector does not claim that an already visible output has moved. Refreshing the list or changing language also rebuilds the status from the real output state.
 
 The attention effect has its own Qt timer, with interval and event limit in `theme.py`. It alternates background/contrast colors and restores the normal background at the end. Start and Reset also stop the effect. The ordinary output background is black in both themes.
 
+The output keeps its normal time-warning color separately from the active flash phase. One rendering method combines those states whenever time, flash or size changes. A countdown update therefore cannot replace the black text required on a white flash background with ordinary white timer text.
+
 ## Monitors and identity
 
-Qt supplies its list of `QScreen` objects. An index is a position in that list, and can change when screens are reconnected. Chronometer therefore saves an identity where possible:
+`DisplayManager` in `displays.py` reads Qt's list of `QScreen` objects and a native Windows provider. Its `refresh()` method creates a snapshot of `DisplayInfo` records, each containing the Qt screen, saved identity, display name and description. These providers can be replaced in tests without calling physical display APIs.
 
-1. On Windows, match the Qt screen name with metadata read through `EnumDisplayDevicesW`; use the native identifier.
+An index is a position in the list, and can change when screens are reconnected. Chronometer therefore saves an identity where possible:
+
+1. On Windows, match the Qt screen name to its GDI adapter name and use the native monitor interface identity.
 2. Otherwise, combine available serial number, manufacturer, model and screen name.
 3. If metadata is unavailable, use position and dimensions.
 4. When metadata matches more than one Qt screen, append geometry to distinguish them.
 
-At startup, selection tries the saved identity, then the legacy saved index, then the second available screen, then the first. The index API is retained for older preference files; opening an output now saves the identity.
+At startup, selection tries the saved identity, then a valid legacy saved index, then the second available screen, then the first. With no screens, `preferred_index()` returns `-1`, leaving no selection. The index API is retained for older preference files; opening an output now saves the identity.
 
-Open moves the output to the selected screen's top-left position and requests full-screen display. Qt and the desktop compositor determine the final placement. Screen-added and screen-removed signals refresh the list; removal of a visible output's screen triggers an attempt to reopen on an available selection.
+`open_output()` refreshes the snapshot once and resolves the selected identity. If it is gone, the method returns `None` without moving or showing the window, and the panel refreshes the selector. Otherwise it explicitly calls `setScreen()` before setting the position and requesting full-screen display. When an already full-screen output changes screens, it first hides the output and clears the old full-screen state. These operations do not change the countdown.
 
-The Windows API structures and calls are guarded by `sys.platform == 'win32'`. Linux returns no native Windows displays. Simulated metadata tests cannot establish real Windows API behavior or compositor behavior.
+Explicit screen association matters on Wayland, where a compositor can ignore manual window coordinates. Coordinates remain a placement hint on systems that support them; selecting a `QScreen` does not remove the need to test the intended compositor and hardware. Screen-added and screen-removed signals refresh the list; removal of a visible output's screen triggers an attempt to reopen on an available selection.
+
+On Windows, `EnumDisplayDevicesW` enumerates all monitor indexes under each active, non-mirroring adapter. Monitor queries pass `EDD_GET_DEVICE_INTERFACE_NAME` (`0x00000001`) to populate `DeviceID` with the registered monitor interface. The code does not use the reserved `DeviceKey` as an identity. An active adapter with no enumerated monitor receives a name-based fallback.
+
+Several physical monitors can share one GDI output, for example in a cloned display arrangement. In that case, matching native entries are combined into an order-independent identity and description. A clone group still corresponds to one Qt screen; the app cannot select its physical members independently.
+
+The native structures and calls remain guarded by `sys.platform == 'win32'`. Linux returns no native Windows displays unless a simulated provider is supplied by a test. Simulated selection/placement tests do not establish real Windows API or compositor behavior.
 
 ## Preference storage
 
 `ConfigManager.CONFIG_DIR` and `CONFIG_FILE` are evaluated at import time. Normally the folder is `Path.home() / '.chronometer'`. The optional `CHRONOMETER_CONFIG_DIR` environment variable replaces that folder for isolated runs; set it before starting the process.
 
-Reads combine a valid JSON object with defaults, preserving unknown keys. Missing files, malformed JSON and read errors use defaults. The theme getter accepts a boolean; the language getter accepts a string or uses automatic detection. Other getters perform their own checks, such as integer conversion for the legacy index.
+Reads combine a valid JSON object with defaults, preserving unknown keys. Missing files, malformed JSON and read errors use defaults. Known fields are normalized before they reach the interface:
 
-Writes create the folder if needed, write `config.json.tmp`, flush Python's buffer, ask the OS to flush the file with `fsync`, then replace the original with `os.replace`. A failed replacement preserves the previous final file and attempts to remove the temporary file. This protects against a partial JSON write; it is not coordination between multiple running app instances.
+| Field | Accepted value and fallback |
+|---|---|
+| `last_monitor_index` | Nonnegative integer, integral finite number or legacy decimal text. Booleans, fractions, non-finite numbers and negative values use the default index. |
+| `last_monitor_id` | Non-empty trimmed string, otherwise `None`. |
+| `language` | Trimmed registered code; hyphens are normalized to underscores. Blank, unsupported or wrongly typed values become `None`, meaning automatic detection. |
+| `dark_mode` | A boolean, otherwise the default theme. |
 
-The GUI continues after handled file-access errors, but a save may not persist. Diagnostics are printed in Portuguese. No active timer session is stored.
+All public `save*()` methods return a boolean result. A save creates the directory if needed, then obtains a `QLockFile` named `config.json.lock` in that directory. The lock covers the complete read–alter–write transaction, not just final replacement. Another process waits at most 250 milliseconds; if the lock cannot be acquired, that save returns `False` instead of blocking the presentation indefinitely.
+
+The lock holder reads the latest preferences, updates and normalizes them, and writes a uniquely named temporary file such as `.config.json.<random>.tmp` beside the destination. It flushes Python's buffer, asks the OS to flush with `fsync`, closes the temporary file and replaces the original with `os.replace`. Each writer owns its temporary file, so two processes cannot truncate each other's in-progress JSON. A failed write or replacement leaves the previous final file in place and attempts to clean up only that writer's temporary file. The lock is released in a `finally` block.
+
+The panel reports a failed preference save through a short nonmodal status-bar message, while leaving the countdown usable. Portuguese diagnostics also go to the terminal. The lock and unique temporary files support multiple app instances; they do not synchronize their live UI settings, and two saves of the same preference still use the last successful value. No active timer session is stored.
 
 ## Translation flow
 
 Gettext maps each literal original message to its translated form. `ConfigManager.LANGUAGE_NAMES` supplies the language selector and maintenance tools; `SUPPORTED_LANGUAGES` is derived at import time.
 
-Automatic detection normalizes Portuguese variants to `pt_PT` and English variants to `en_US`. Other regional codes are attempted as reported. `setup_i18n()` returns the requested/detected code even if its catalog is missing; it does not report which catalog actually supplied a translation. Missing catalogs/messages use original strings.
+Automatic detection normalizes Portuguese variants to `pt_PT` and English variants to `en_US`. Only registered codes are applied. An unknown system code uses the default Portuguese language. A blank request uses system detection; a blank or unsupported saved preference has already been normalized to that automatic choice by `ConfigManager`.
+
+`setup_i18n()` tries the requested registered catalog. If it is missing or invalid, it tries the default Portuguese catalog, then uses original Portuguese strings if no catalog can be loaded. Its return value and `get_current_language()` are the effective registered language, so the selector stays consistent with the applied fallback. Individual missing messages within an otherwise valid catalog can still fall back to their original strings; catalog-completeness tests prevent that in maintained production catalogs.
 
 Changing language reinstalls `_`, updates panel controls and menu, and updates the output title. About is modal, so the panel cannot be used to change language/theme while that dialog is open; a new dialog uses the current settings.
 
@@ -141,8 +169,8 @@ The control panel has a fixed configured size. The About dialog has a configured
 
 ## Resources and executable layout
 
-`resource_path()` returns paths under the repository root when running source, or under `sys._MEIPASS` when frozen by PyInstaller. The latter is the temporary extraction root for the bundled data. Icons and translations use this common helper.
+`resource_path()` returns paths under the repository root when running source, or under `sys._MEIPASS` when frozen by PyInstaller. The latter is the temporary extraction root for the bundled data. Icons and translations use this common helper. Icon loading tries a valid ICO, then a valid SVG, and returns an empty icon only if neither can be read.
 
 `build.py` adds the repository's parent as an analysis import path, bundles `icon/`, `i18n/locales/` and `chronometer.desktop`, and generates its specification under `build/`. The legacy root specification is not loaded or regenerated by this process.
 
-See [Distribution](distribution.md) for the actual commands and verification procedure.
+`smoke_check.py` verifies the packaged icons and translation bytes, then launches the executable from a temporary working directory with isolated preferences and the `offscreen` backend. It checks startup only, not physical display placement or interactive controls. See [Distribution](distribution.md) for the actual commands and verification procedure.

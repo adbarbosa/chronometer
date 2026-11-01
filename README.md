@@ -117,7 +117,7 @@ source .venv/Scripts/activate
 python -m pip install -r requirements.txt
 ```
 
-`requirements.txt` lists the packages needed to run the app. Currently, its direct dependency is **PyQt6**, the Python interface to the Qt window and widget toolkit. Pip installs its required packages as well.
+`requirements.txt` records validated versions of **PyQt6**, the Python interface to the Qt window and widget toolkit, and its Qt runtime/binding components. Pip installs those versions and their required packages. Development tools are pinned separately in `requirements-dev.txt`; this controls the listed packages, not every transitive dependency or system library.
 
 **Expected result:** package installation finishes without errors. Check the active interpreter and installed toolkit:
 
@@ -178,7 +178,7 @@ The following labels are English / Portuguese. The interface language is chosen 
 ### Prepare a presentation
 
 1. Connect the projector or second monitor. In the operating system's display settings, use an **extended desktop** if you want different content on each screen. Duplicated displays show the same desktop.
-2. Start Chronometer. Choose the output monitor in the top list. The refresh button reloads that list.
+2. Start Chronometer. Choose the output monitor in the top list. The refresh button reloads that list. The status line reports the actual output visibility; hiding the output with its clock or the operating system also updates that line.
 3. Press **Open / Abrir** to show the output full screen on the selected monitor. Changing the list selection alone does not move the output; press Open again.
 4. Choose a preset, or edit the manual minutes and press **Set / Definir**.
 5. Press **Start / Iniciar** when the presentation begins.
@@ -210,7 +210,7 @@ The countdown continues below zero until you stop or reset it. For example, `-00
 | `00:59` through `00:00` | Orange |
 | Below `00:00` | Red |
 
-These warning colors apply to the **output**. The control panel uses its selected theme. The smaller output clock shows local time in `HH:mm`; it continues while the countdown is paused. The attention effect temporarily changes the output background.
+These warning colors apply to the **output**. The control panel uses its selected theme. The smaller output clock shows local time in `HH:mm`; it continues while the countdown is paused. The attention effect temporarily changes the output background and preserves readable countdown contrast while the time updates or the window is resized.
 
 ### Change theme or language
 
@@ -220,7 +220,9 @@ The language selector updates the interface during use, including the Help menu.
 
 ### Connect or remove a display
 
-The monitor list updates when Qt reports a display being connected or removed. The refresh button also updates it. When the selected display is unavailable at startup, the app chooses an available alternative. If an output display is removed during use, the app attempts to reopen the visible output on a remaining display.
+The monitor list updates when Qt reports a display being connected or removed. Opening the output explicitly associates it with the selected Qt screen, including when switching an already full-screen output. The refresh button also updates it. When the selected display is unavailable at startup, the app chooses an available alternative. If an output display is removed during use, the app attempts to reopen the visible output on a remaining display.
+
+Windows identifiers now use native monitor interface names. A preference saved with the older identifier format may fall back once after this update; select the intended monitor and press Open to save its new identity.
 
 Display placement depends on the operating system and desktop environment. Test connecting, disconnecting and full-screen placement with your actual presentation equipment before relying on it. Identifiers based on geometry can change when the display arrangement changes.
 
@@ -257,9 +259,11 @@ Usually you can change preferences through the interface. To edit the file manua
 
 To reset all preferences, close the app and rename `config.json` to `config.json.backup`. Start the app again; missing preferences use defaults, and the next preference change creates a new file. Keep the backup until you confirm the result.
 
-Invalid JSON uses defaults without immediately deleting the original file. A later successful preference change replaces it with valid JSON. Wrong types for theme or language use their defaults. Saving uses a temporary file followed by replacement of the original. Access failures are reported in the terminal; an unwritable folder can prevent settings from persisting even though the app continues.
+Invalid JSON uses defaults without immediately deleting the original file. A later successful preference change replaces it with valid JSON. Wrong theme types use the light default. Empty, whitespace-only or unregistered saved language codes restore automatic detection. Invalid monitor indexes, including negative, fractional and non-finite numbers, use a safe default; older decimal text indexes remain readable.
 
-For automatic language selection, system codes beginning with `pt` use `pt_PT`, and codes beginning with `en` use `en_US`. Other regional codes are attempted unchanged; if their catalog is absent, the original Portuguese strings appear. If detection fails, Portuguese is used.
+Each save uses its own temporary file and replaces the final file only after the write is complete. A lock coordinates the entire update between running instances. If the lock cannot be obtained within 250 milliseconds or file access fails, the change is not reported as saved: a translated message appears at the bottom of the panel for six seconds, and the terminal has diagnostic details. The current session remains usable; retry the change when the other writer has finished or after fixing folder permissions.
+
+For automatic language selection, system codes beginning with `pt` use `pt_PT`, and codes beginning with `en` use `en_US`. Other codes can be used when that language is registered. An unregistered system language, failed detection or an absent/damaged requested catalog falls back to Portuguese. The selector reports the language actually applied. If even the Portuguese catalog is unavailable, the original Portuguese strings are used.
 
 ## Troubleshooting
 
@@ -273,7 +277,7 @@ Start by opening a terminal, entering the repository root, activating `.venv` an
 | Qt reports a display or platform-plugin error | Run in a desktop session. Capture the full Qt error and your Linux distribution/session type; Qt may require system graphics libraries. `offscreen` is for automated checks and does not show usable desktop windows. |
 | Output appears on the wrong monitor | Check extended-display settings, refresh the monitor list, select the desired screen and press Open. Test your compositor's full-screen behavior. |
 | Output appears to have disappeared | It may have been hidden by Close or by clicking its clock. Press Open again. The countdown may still be running. |
-| Preferences are not remembered | Close the app, inspect the configuration file and check that its folder is writable. Run from a terminal to see access errors. |
+| Preferences are not remembered | Check for the save-failure message at the bottom of the panel. Retry after another instance finishes saving, or fix write access to the preferences folder. Run from a terminal for details. Do not delete a lock file while an instance is writing. |
 | Wrong language | Check the saved `language` value. Choosing a language in the interface overrides automatic detection. Developers should also check compiled catalogs; see the translation guide below. |
 | Windows blocks the executable | Read the [Windows distribution notes](docs/distribution.md#windows-signing-and-blocks). Signing, reputation and local policy are separate factors. |
 | A downloaded executable fails on another Linux machine | The build depends on platform/system libraries. Try the source installation and read the [build guide](docs/distribution.md). |
@@ -282,9 +286,9 @@ If the problem remains, report it through the [GitHub issues page](https://githu
 
 ## Platform support and limitations
 
-Development and the configured automated checks use Linux. The configured Python matrix is 3.10–3.12. Automated GUI tests use a simulated screen; they do not establish that real multi-monitor placement works.
+Local development and this recorded verification use Linux. Automated checks are configured for Linux and Windows with Python 3.10–3.12, with separate executable build/startup jobs on Python 3.12. Configuring those jobs does not establish that a remote run has completed. Automated GUI tests use a simulated screen; they do not establish that real multi-monitor placement works.
 
-Windows commands and native display integration are provided, but Windows execution, signing behavior and physical display handling have not been validated by this Linux development environment. macOS is outside the project's current validation scope.
+Windows commands and native display integration are provided, and the CI now includes Windows jobs. Actual Windows execution, signing behavior and physical display handling have not been validated by this Linux development environment. macOS is outside the project's current validation scope.
 
 The countdown uses a monotonic clock to avoid accumulating delays from late interface updates. It is not a guarantee of real-time scheduling or identical behavior across system suspension on all operating systems. A blocked interface still cannot repaint until it processes events again.
 
