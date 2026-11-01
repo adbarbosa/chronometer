@@ -1,6 +1,6 @@
 # Validation record
 
-This record describes checks performed for the **0.6.0 compact-layout update on 2026-11-01**, following the earlier robustness work. It is evidence for that checkout and environment, not a guarantee about every platform or future change. Repeat the relevant checks after editing the application.
+This record describes checks performed for the **0.6.0 compact-layout update and refresh-icon contrast fix on 2026-11-01**, following the earlier robustness work. It is evidence for that checkout and environment, not a guarantee about every platform or future change. Repeat the relevant checks after editing the application.
 
 ## Local environment
 
@@ -29,7 +29,7 @@ python -m pylint "*.py" "i18n/*.py"
 git diff --check
 ```
 
-Results: **83 tests passed**, **Pylint 10.00/10**, and no whitespace errors. The two new tests observe the text actually sent to Qt's painter: long labels and monitor selections are shortened visually, while their full text, tooltips and monitor identities remain intact. Repeating catalog update/compilation without changes produced identical catalog bytes. Local documentation paths and internal heading links were checked. Changed Python modules also passed a Python 3.10 syntax check and a check for module, class and named-function docstrings.
+Results: **84 tests passed**, **Pylint 10.00/10**, and no whitespace errors. Compact-text tests observe the text actually sent to Qt's painter: long labels and monitor selections are shortened visually, while their full text, tooltips and monitor identities remain intact. A refresh-icon regression supplies a white desktop icon and checks actual icon pixels through light → dark → light, at 1× and 2× pixel density. Repeating catalog update/compilation without changes produced identical catalog bytes. Local documentation paths and internal heading links were checked. Changed Python modules also passed a Python 3.10 syntax check and a check for module, class and named-function docstrings.
 
 The suite's actual scope is listed in [Contributing](../CONTRIBUTING.md#what-the-automated-tests-cover). Regressions now include concurrent writers, bounded lock failure, invalid/non-finite preferences, effective-language fallback, contrast while flashing and resizing, output visibility/status, explicit screen association, QObject destruction, invalid-icon fallback and startup-check process cleanup. The additional-language test creates and compiles a temporary catalog without changing the supported production languages.
 
@@ -44,6 +44,8 @@ The panel remained **400 × 550 logical pixels** in all 20 cases, with a 400 × 
 A simulated long monitor name and open-output status were shortened to fit, while the full text, tooltip and selected monitor identity stayed intact. The nonmodal save-failure notice fitted in the status bar and the countdown kept running. These rendering checks used a simulated failed-save result; an isolated configuration check also confirmed that a directory at the preference-file path makes a real save fail without replacing that directory.
 
 The README's control image was regenerated at 400 × 550 using the English/light interface. Its existing output image shows 45 seconds remaining; the audience output layout was unchanged. Example clock/date labels were set for these documentation images.
+
+The refresh-icon defect was reproduced with the locally installed Breeze Dark icon theme: its near-white system icon was barely visible on the light panel. After the fix, Portuguese and English captures showed a dark glyph on the light panel and a light glyph on the dark panel, while that desktop icon theme remained selected. Requested icon pixmaps at scale factors 1, 1.25, 1.5, 2, 3 and 4 retained the expected physical size and pixel-density metadata. The README image includes the corrected glyph.
 
 This confirms rendering in the local test backend. It does not establish physical-screen placement, operating-system window decorations or font availability on another machine.
 

@@ -10,7 +10,6 @@ from PyQt6.QtWidgets import (
     QMainWindow,
     QPushButton,
     QSpinBox,
-    QStyle,
     QSizePolicy,
     QVBoxLayout,
     QWidget,
@@ -29,7 +28,7 @@ from chronometer.theme import (
     CLOCK_INTERVAL, CONTROL, COUNTDOWN_INTERVAL, PREFERENCE_MESSAGE_MS, build_control_styles,
 )
 from chronometer.timer_window import TimerWindow
-from chronometer.icon_manager import get_app_icon
+from chronometer.icon_manager import get_app_icon, get_refresh_icon
 
 
 DEFAULT_MINUTES = 10
@@ -103,9 +102,6 @@ class MainWindow(QMainWindow):
         self.combo_monitors.setMinimumContentsLength(CONTROL["monitor_characters"])
         self.combo_monitors.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.btn_refresh_monitors = QPushButton()
-        self.btn_refresh_monitors.setIcon(
-            self.style().standardIcon(QStyle.StandardPixmap.SP_BrowserReload)
-        )
         self.btn_refresh_monitors.setIconSize(QSize(CONTROL["refresh_icon"], CONTROL["refresh_icon"]))
         self.btn_output = QPushButton(_("Abrir"))
         self.btn_close_output = QPushButton(_("Fechar"))
@@ -487,6 +483,7 @@ class MainWindow(QMainWindow):
         self.btn_refresh_monitors.setStyleSheet(
             s["monitor_btn"] + s["refresh"]
         )
+        self.btn_refresh_monitors.setIcon(get_refresh_icon(self.dark_mode))
 
         self.combo_monitors.setStyleSheet(s["combo"])
 

@@ -16,59 +16,59 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: main_window.py:425
+#: main_window.py:421
 msgid "Controlo"
 msgstr "Control"
 
-#: main_window.py:110 main_window.py:433
+#: main_window.py:106 main_window.py:429
 msgid "Abrir"
 msgstr "Open"
 
-#: about_dialog.py:109 main_window.py:111 main_window.py:434
+#: about_dialog.py:109 main_window.py:107 main_window.py:430
 msgid "Fechar"
 msgstr "Close"
 
-#: main_window.py:134 main_window.py:148 main_window.py:438 main_window.py:442
+#: main_window.py:130 main_window.py:144 main_window.py:434 main_window.py:438
 msgid " min"
 msgstr " min"
 
-#: main_window.py:156 main_window.py:441
+#: main_window.py:152 main_window.py:437
 msgid "Definir"
 msgstr "Set"
 
-#: main_window.py:166 main_window.py:445
+#: main_window.py:162 main_window.py:441
 msgid "Iniciar"
 msgstr "Start"
 
-#: main_window.py:167 main_window.py:446
+#: main_window.py:163 main_window.py:442
 msgid "Parar"
 msgstr "Stop"
 
-#: main_window.py:168 main_window.py:447
+#: main_window.py:164 main_window.py:443
 msgid "Repor"
 msgstr "Reset"
 
-#: main_window.py:174 main_window.py:448
+#: main_window.py:170 main_window.py:444
 msgid "Chamar Atenção"
 msgstr "Call Attention"
 
-#: main_window.py:454 main_window.py:466
+#: main_window.py:450 main_window.py:462
 msgid "Modo Escuro"
 msgstr "Dark Mode"
 
-#: main_window.py:452 main_window.py:464
+#: main_window.py:448 main_window.py:460
 msgid "Modo Claro"
 msgstr "Light Mode"
 
-#: main_window.py:342
+#: main_window.py:338
 msgid "{count} monitor(es) detectado(s)"
 msgstr "{count} monitor(s) detected"
 
-#: main_window.py:338
+#: main_window.py:334
 msgid "Aberto em: {monitor_name}"
 msgstr "Opened in: {monitor_name}"
 
-#: main_window.py:340
+#: main_window.py:336
 msgid "Output fechado."
 msgstr "Output closed."
 
@@ -76,15 +76,15 @@ msgstr "Output closed."
 msgid "Saída do temporizador"
 msgstr "Timer Output"
 
-#: main_window.py:246 main_window.py:428
+#: main_window.py:242 main_window.py:424
 msgid "Ajuda"
 msgstr "Help"
 
-#: main_window.py:249 main_window.py:429
+#: main_window.py:245 main_window.py:425
 msgid "Sobre Chronometer"
 msgstr "About Chronometer"
 
-#: main_window.py:256 main_window.py:430
+#: main_window.py:252 main_window.py:426
 msgid "Visitar Website"
 msgstr "Visit Website"
 
@@ -132,10 +132,10 @@ msgstr "Internationalization (Portuguese and English)"
 msgid "Abrir no GitHub"
 msgstr "Open on GitHub"
 
-#: main_window.py:272 main_window.py:337
+#: main_window.py:268 main_window.py:333
 msgid "Monitor"
 msgstr "Monitor"
 
-#: main_window.py:350
+#: main_window.py:346
 msgid "Preferências não guardadas. Tente novamente."
 msgstr "Preferences were not saved. Try again."

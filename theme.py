@@ -116,6 +116,8 @@ CONTROL = {
     "datetime_spacing": 0,
 }
 
+REFRESH_ICON_SCALES = (1, 2, 3, 4)
+
 ABOUT = {
     "size": (540, 440),
     "margins": (20, 20, 20, 20),
@@ -150,7 +152,19 @@ OUTPUT_CLOCK_RATIO   = 0.60   # % do tamanho do timer
 OUTPUT_CLOCK_MIN_PX  = 30     # tamanho mínimo do relógio em px
 
 
-# ---- Funções de construção de stylesheets --------------------------------
+# ---- Construção do ícone de atualizar e das stylesheets ------------------
+
+def build_refresh_icon_svg(dark: bool) -> str:
+    """Desenha o símbolo de atualizar com a cor de texto do tema da aplicação."""
+    palette = DARK if dark else LIGHT
+    return (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'
+        f'<path fill="none" stroke="{palette["text"]}" stroke-width="2" '
+        'stroke-linecap="round" stroke-linejoin="round" '
+        'd="M21 12a9 9 0 1 1-9-9c2.5 0 4.9 1 6.7 2.9L21 8M21 3v5h-5"/>'
+        '</svg>'
+    )
+
 
 def _button_style(
     bg: str,

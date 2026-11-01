@@ -2,9 +2,12 @@
 Módulo para gerenciamento do ícone da aplicação.
 Fornece uma função unificada para obter o ícone em diferentes plataformas.
 """
-from PyQt6.QtGui import QIcon
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QIcon, QPainter, QPixmap
+from PyQt6.QtSvg import QSvgRenderer
 
 from chronometer.resources import resource_path
+from chronometer.theme import CONTROL, REFRESH_ICON_SCALES, build_refresh_icon_svg
 
 # Caminhos para os ícones
 ICON_DIR = resource_path("icon")
@@ -26,3 +29,19 @@ def get_app_icon() -> QIcon:
             if not icon.isNull():
                 return icon
     return QIcon()
+
+
+def get_refresh_icon(dark: bool) -> QIcon:
+    """Cria um ícone de atualizar independente do tema do sistema, em várias escalas."""
+    renderer = QSvgRenderer(build_refresh_icon_svg(dark).encode("utf-8"))
+    icon = QIcon()
+    for scale in REFRESH_ICON_SCALES:
+        size = CONTROL["refresh_icon"] * scale
+        pixmap = QPixmap(size, size)
+        pixmap.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(pixmap)
+        renderer.render(painter)
+        painter.end()
+        pixmap.setDevicePixelRatio(scale)
+        icon.addPixmap(pixmap)
+    return icon

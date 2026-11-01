@@ -4,6 +4,7 @@ import sys
 from types import SimpleNamespace
 
 from PyQt6.QtCore import QCoreApplication, QEvent, QRect
+from PyQt6.QtGui import QColor, QIcon, QPixmap
 from PyQt6.QtTest import QTest
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QApplication
@@ -13,7 +14,8 @@ from chronometer.config import ConfigManager
 from chronometer.countdown import Countdown
 from chronometer.displays import DisplayInfo
 from chronometer import i18n
-from chronometer.theme import DARK, LIGHT
+from chronometer.main_window import MainWindow
+from chronometer.theme import CONTROL, DARK, LIGHT
 from chronometer.windows_displays import NativeDisplay, find_native_display
 
 
@@ -74,6 +76,34 @@ def test_language_and_about_theme(window):
     assert LIGHT["bg"] in light_dialog.styleSheet()
     dark_dialog.close()
     light_dialog.close()
+
+
+def test_refresh_icon_contrasts_after_theme_changes(window_factory, monkeypatch):
+    """Um ícone branco do sistema não torna o botão invisível após mudar de tema."""
+    white_pixmap = QPixmap(CONTROL["refresh_icon"], CONTROL["refresh_icon"])
+    white_pixmap.fill(Qt.GlobalColor.white)
+    desktop_style = SimpleNamespace(standardIcon=lambda _standard_pixmap: QIcon(white_pixmap))
+    monkeypatch.setattr(MainWindow, "style", lambda _panel: desktop_style)
+    panel = window_factory()
+    button = panel.btn_refresh_monitors
+
+    for index, palette in enumerate((LIGHT, DARK, LIGHT)):
+        if index:
+            panel.toggle_dark_mode()
+        assert button.width() == button.height() == CONTROL["refresh_size"]
+        assert button.iconSize().width() == button.iconSize().height() == CONTROL["refresh_icon"]
+        for scale in (1.0, 2.0):
+            pixmap = button.icon().pixmap(button.iconSize(), scale, QIcon.Mode.Normal)
+            assert not pixmap.isNull()
+            assert pixmap.devicePixelRatio() == scale
+            assert pixmap.width() == pixmap.height() == int(CONTROL["refresh_icon"] * scale)
+            image = pixmap.toImage()
+            colors = {
+                image.pixelColor(x, y).name()
+                for x in range(image.width()) for y in range(image.height())
+                if image.pixelColor(x, y).alpha() == 255
+            }
+            assert colors == {QColor(palette["text"]).name()}
 
 
 def test_output_thresholds_and_flash_completion(window):

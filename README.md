@@ -226,7 +226,7 @@ These warning colors apply to the **output**. The control panel uses its selecte
 
 Use the language selector and theme button at the bottom left of the panel. The date and local clock stay together at the bottom right, with the date above the time; both align to the right. They use `dd/MM/yyyy` and `HH:mm:ss`, respectively, and update independently of the countdown.
 
-The light/dark choice applies to the control panel and to the About dialog when it is opened. The normal output background stays black for either theme.
+The light/dark choice applies to the control panel and to the About dialog when it is opened. The monitor refresh symbol follows the panel theme, including when the desktop uses a different theme. The normal output background stays black for either theme.
 
 The language selector updates the interface during use, including the Help menu. The selection is saved immediately. Help / Ajuda contains the About dialog and a link to the project on GitHub.
 
