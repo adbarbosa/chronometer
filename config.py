@@ -1,9 +1,13 @@
 """Gestor de configurações persistentes para Chronometer."""
 
 import json
+import math
 import os
 from pathlib import Path
+import tempfile
 from typing import Any
+
+from PyQt6.QtCore import QLockFile
 
 
 def config_directory() -> Path:
@@ -13,20 +17,18 @@ def config_directory() -> Path:
 
 
 class ConfigManager:
-    """Gere a persistência de preferências num ficheiro JSON."""
+    """Gere preferências normalizadas e serializa as gravações entre processos."""
 
     CONFIG_DIR = config_directory()
     CONFIG_FILE = CONFIG_DIR / "config.json"
+    LOCK_TIMEOUT_MS = 250
 
-    # Valores por defeito
     DEFAULTS = {
-        "last_monitor_index": 1,  # Usar segundo monitor se disponível
+        "last_monitor_index": 1,
         "last_monitor_id": None,
-        "language": None,  # None = usar idioma do sistema
-        "dark_mode": False,  # Tema claro por defeito
+        "language": None,
+        "dark_mode": False,
     }
-
-    # Idiomas suportados
     LANGUAGE_NAMES = {
         "pt_PT": "Português (PT)",
         "en_US": "English (US)",
@@ -34,108 +36,143 @@ class ConfigManager:
     SUPPORTED_LANGUAGES = list(LANGUAGE_NAMES)
     DEFAULT_LANGUAGE = "pt_PT"
 
-    @classmethod
-    def _ensure_config_dir(cls) -> None:
-        """Cria diretório de configuração se não existir."""
-        cls.CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-
-    @classmethod
-    def _load_config(cls) -> dict[str, Any]:
-        """Carrega configurações do ficheiro JSON."""
+    @staticmethod
+    def _monitor_index(value: Any, default: int = 1) -> int:
+        """Aceita índices inteiros não negativos e texto decimal de versões anteriores."""
         try:
-            if not cls.CONFIG_FILE.exists():
-                return cls.DEFAULTS.copy()
-            with open(cls.CONFIG_FILE, "r", encoding="utf-8") as f:
-                config = json.load(f)
-                if not isinstance(config, dict):
-                    raise ValueError("o conteúdo não é um objeto JSON")
-                # Completar chaves novas sem eliminar preferências desconhecidas.
-                defaults = cls.DEFAULTS.copy()
-                defaults.update(config)
-                return defaults
-        except (json.JSONDecodeError, ValueError, IOError) as e:
-            print(f"⚠️ Erro ao carregar configurações: {e}. Usando defaults.")
-            return cls.DEFAULTS.copy()
-
-    @classmethod
-    def _save_config(cls, config: dict[str, Any]) -> None:
-        """Guarda configurações em ficheiro JSON."""
-        temporary_file = cls.CONFIG_FILE.with_suffix(".json.tmp")
-
-        try:
-            cls._ensure_config_dir()
-            with open(temporary_file, "w", encoding="utf-8") as f:
-                json.dump(config, f, indent=2, ensure_ascii=False)
-                f.flush()
-                os.fsync(f.fileno())
-            os.replace(temporary_file, cls.CONFIG_FILE)
-        except (IOError, OSError) as e:
-            print(f"⚠️ Erro ao guardar configurações: {e}")
-            try:
-                temporary_file.unlink()
-            except OSError:
-                # A limpeza é uma tentativa: a pasta também pode estar inacessível.
-                pass
-
-    @classmethod
-    def get(cls, key: str, default: Any = None) -> Any:
-        """Obtém uma configuração pelo nome da chave."""
-        config = cls._load_config()
-        return config.get(key, default)
-
-    @classmethod
-    def save(cls, key: str, value: Any) -> None:
-        """Guarda uma configuração."""
-        config = cls._load_config()
-        config[key] = value
-        cls._save_config(config)
-
-    @classmethod
-    def get_last_monitor_index(cls, default: int = 1) -> int:
-        """Obtém o índice do último monitor aberto."""
-        value = cls.get("last_monitor_index", default)
-        # Garantir que é inteiro
-        try:
-            return int(value)
-        except (TypeError, ValueError):
+            if isinstance(value, bool):
+                return default
+            if isinstance(value, str):
+                value = value.strip()
+                if not value.removeprefix("+").isdecimal():
+                    return default
+            elif isinstance(value, float):
+                if not math.isfinite(value) or not value.is_integer():
+                    return default
+            elif not isinstance(value, int):
+                return default
+            index = int(value)
+            return index if index >= 0 else default
+        except (ValueError, OverflowError):
             return default
 
     @classmethod
-    def save_monitor_index(cls, index: int) -> None:
-        """Guarda o índice do monitor."""
-        cls.save("last_monitor_index", int(index))
+    def _normalize_config(cls, config: dict[str, Any], monitor_index_default: int = 1) -> dict[str, Any]:
+        """Valida campos conhecidos sem eliminar chaves de versões futuras."""
+        result = cls.DEFAULTS | config
+        result["last_monitor_index"] = cls._monitor_index(result["last_monitor_index"], monitor_index_default)
+        monitor_id = result["last_monitor_id"]
+        result["last_monitor_id"] = monitor_id.strip() or None if isinstance(monitor_id, str) else None
+        language = result["language"]
+        language = language.strip().replace("-", "_") if isinstance(language, str) else None
+        result["language"] = language if language in cls.LANGUAGE_NAMES else None
+        if not isinstance(result["dark_mode"], bool):
+            result["dark_mode"] = cls.DEFAULTS["dark_mode"]
+        return result
+
+    @classmethod
+    def _load_config(cls, monitor_index_default: int = 1) -> dict[str, Any]:
+        """Carrega e normaliza JSON; ficheiros ausentes ou inválidos usam os valores por defeito."""
+        try:
+            if not cls.CONFIG_FILE.exists():
+                return cls.DEFAULTS.copy()
+            with cls.CONFIG_FILE.open("r", encoding="utf-8") as stream:
+                config = json.load(stream)
+            if not isinstance(config, dict):
+                raise ValueError("o conteúdo não é um objeto JSON")
+            return cls._normalize_config(config, monitor_index_default)
+        except (ValueError, OSError) as error:
+            print(f"⚠️ Erro ao carregar configurações: {error}. A usar os valores por defeito.")
+            return cls.DEFAULTS.copy()
+
+    @classmethod
+    def _save_config(cls, config: dict[str, Any]) -> bool:
+        """Escreve um temporário exclusivo e substitui o ficheiro apenas após concluir a escrita."""
+        temporary_file: Path | None = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w", encoding="utf-8", dir=cls.CONFIG_FILE.parent,
+                prefix=f".{cls.CONFIG_FILE.name}.", suffix=".tmp", delete=False,
+            ) as stream:
+                temporary_file = Path(stream.name)
+                json.dump(config, stream, indent=2, ensure_ascii=False, allow_nan=False)
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.replace(temporary_file, cls.CONFIG_FILE)
+            return True
+        except (OSError, TypeError, ValueError) as error:
+            print(f"⚠️ Erro ao guardar configurações: {error}")
+            return False
+        finally:
+            if temporary_file is not None:
+                try:
+                    temporary_file.unlink(missing_ok=True)
+                except OSError:
+                    # Uma pasta inacessível também pode impedir a limpeza do temporário.
+                    pass
+
+    @classmethod
+    def get(cls, key: str, default: Any = None) -> Any:
+        """Obtém uma preferência normalizada ou o valor indicado para uma chave ausente."""
+        return cls._load_config().get(key, default)
+
+    @classmethod
+    def save(cls, key: str, value: Any) -> bool:
+        """Protege a transação ler–alterar–guardar e informa se a atualização foi persistida."""
+        try:
+            cls.CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+        except OSError as error:
+            print(f"⚠️ Erro ao criar a pasta de configurações: {error}")
+            return False
+        lock = QLockFile(str(cls.CONFIG_FILE.with_suffix(".json.lock").resolve()))
+        # Um escritor ativo não deve perder o bloqueio por uma demora no sistema de ficheiros.
+        lock.setStaleLockTime(0)
+        if not lock.tryLock(cls.LOCK_TIMEOUT_MS):
+            print("⚠️ Não foi possível obter o bloqueio para guardar as configurações.")
+            return False
+        try:
+            config = cls._load_config()
+            config[key] = value
+            return cls._save_config(cls._normalize_config(config))
+        finally:
+            lock.unlock()
+
+    @classmethod
+    def get_last_monitor_index(cls, default: int = 1) -> int:
+        """Obtém o índice legado, usando uma alternativa para entradas inválidas."""
+        return cls._load_config(monitor_index_default=default)["last_monitor_index"]
+
+    @classmethod
+    def save_monitor_index(cls, index: int) -> bool:
+        """Guarda o índice legado do monitor e indica se a escrita terminou."""
+        return cls.save("last_monitor_index", index)
 
     @classmethod
     def get_last_monitor_id(cls) -> str | None:
-        """Obtém o identificador persistente do último monitor usado."""
-        value = cls.get("last_monitor_id", None)
-        return value if isinstance(value, str) and value else None
+        """Obtém a identidade normalizada do último monitor aberto."""
+        return cls.get("last_monitor_id")
 
     @classmethod
-    def save_monitor_id(cls, monitor_id: str) -> None:
-        """Guarda o identificador persistente do monitor."""
-        cls.save("last_monitor_id", str(monitor_id))
+    def save_monitor_id(cls, monitor_id: str) -> bool:
+        """Guarda a identidade do monitor e indica se a escrita terminou."""
+        return cls.save("last_monitor_id", monitor_id)
 
     @classmethod
     def get_language(cls) -> str | None:
-        """Obtém o idioma configurado (None = usar idioma do sistema)."""
-        language = cls.get("language", None)
-        return language if isinstance(language, str) else None
+        """Obtém um idioma registado ou None para deteção automática."""
+        return cls.get("language")
 
     @classmethod
-    def save_language(cls, lang: str | None) -> None:
-        """Guarda a preferência de idioma."""
-        if lang is not None and lang not in cls.SUPPORTED_LANGUAGES:
-            lang = cls.DEFAULT_LANGUAGE
-        cls.save("language", lang)
+    def save_language(cls, lang: str | None) -> bool:
+        """Guarda um idioma normalizado ou a escolha automática e informa o resultado."""
+        return cls.save("language", lang)
 
     @classmethod
     def get_dark_mode(cls) -> bool:
-        """Obtém a preferência de tema escuro."""
-        dark_mode = cls.get("dark_mode", False)
-        return dark_mode if isinstance(dark_mode, bool) else cls.DEFAULTS["dark_mode"]
+        """Obtém uma preferência de tema estritamente booleana."""
+        return cls.get("dark_mode", cls.DEFAULTS["dark_mode"])
 
     @classmethod
-    def save_dark_mode(cls, enabled: bool) -> None:
-        """Guarda a preferência de tema escuro."""
-        cls.save("dark_mode", bool(enabled))
+    def save_dark_mode(cls, enabled: bool) -> bool:
+        """Guarda a escolha do tema e informa se a escrita terminou."""
+        return cls.save("dark_mode", enabled)

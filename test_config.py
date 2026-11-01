@@ -2,12 +2,17 @@
 """Teste da funcionalidade ConfigManager."""
 
 import json
+import os
+import subprocess
 import sys
 import tempfile
+from contextlib import ExitStack
 from functools import wraps
 from pathlib import Path
+from time import monotonic, sleep
 
 import pytest
+from PyQt6.QtCore import QLockFile
 
 # Adicionar caminho ao módulo
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -135,9 +140,9 @@ def test_failed_replace_preserves_previous_file(tmp_path, monkeypatch):
         raise PermissionError("Substituição recusada no teste")
 
     monkeypatch.setattr("chronometer.config.os.replace", deny_replace)
-    ConfigManager.save_dark_mode(True)
+    assert ConfigManager.save_dark_mode(True) is False
     assert json.loads(path.read_text(encoding="utf-8")) == {"dark_mode": False}
-    assert not path.with_suffix(".json.tmp").exists()
+    assert not list(tmp_path.glob("*.tmp"))
 
 
 def test_unwritable_directory_does_not_crash(tmp_path, monkeypatch):
@@ -146,8 +151,120 @@ def test_unwritable_directory_does_not_crash(tmp_path, monkeypatch):
     path.write_text("ocupado", encoding="utf-8")
     monkeypatch.setattr(ConfigManager, "CONFIG_DIR", path)
     monkeypatch.setattr(ConfigManager, "CONFIG_FILE", path / "config.json")
-    ConfigManager.save_dark_mode(True)
+    assert ConfigManager.save_dark_mode(True) is False
     assert path.read_text(encoding="utf-8") == "ocupado"
+
+
+@pytest.mark.parametrize("value", [float("inf"), float("nan"), -1, True, False, 2.5, [], "-2"])
+def test_invalid_monitor_indices_use_default(value, tmp_path, monkeypatch):
+    """Índices inválidos não causam exceções nem escolhem um monitor por coerção."""
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps({"last_monitor_index": value}), encoding="utf-8")
+    monkeypatch.setattr(ConfigManager, "CONFIG_FILE", path)
+    assert ConfigManager.get_last_monitor_index() == 1
+
+
+@pytest.mark.parametrize("value", ["", "  ", "unknown", "fr_FR", 12])
+def test_invalid_saved_language_uses_automatic(value, tmp_path, monkeypatch):
+    """Um código vazio ou não registado passa a deteção automática de idioma."""
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps({"language": value}), encoding="utf-8")
+    monkeypatch.setattr(ConfigManager, "CONFIG_FILE", path)
+    assert ConfigManager.get_language() is None
+
+
+def test_save_normalizes_known_fields_and_preserves_unknown(tmp_path, monkeypatch):
+    """Guardar normaliza preferências conhecidas sem perder chaves de outras versões."""
+    path = tmp_path / "config.json"
+    path.write_text(
+        '{"dark_mode": "false", "language": " en_US ", "last_monitor_index": "3", "future": 42}',
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(ConfigManager, "CONFIG_DIR", tmp_path)
+    monkeypatch.setattr(ConfigManager, "CONFIG_FILE", path)
+    assert ConfigManager.save("another", 7) is True
+    stored = json.loads(path.read_text(encoding="utf-8"))
+    assert stored["dark_mode"] is False
+    assert stored["language"] == "en_US"
+    assert stored["last_monitor_index"] == 3
+    assert stored["future"] == 42
+    assert stored["another"] == 7
+
+
+def test_save_returns_false_when_lock_is_held(tmp_path, monkeypatch):
+    """A espera pelo bloqueio é limitada e não substitui o ficheiro se estiver ocupado."""
+    path = tmp_path / "config.json"
+    path.write_text('{"dark_mode": false}', encoding="utf-8")
+    monkeypatch.setattr(ConfigManager, "CONFIG_DIR", tmp_path)
+    monkeypatch.setattr(ConfigManager, "CONFIG_FILE", path)
+    monkeypatch.setattr(ConfigManager, "LOCK_TIMEOUT_MS", 20)
+    held = QLockFile(str(path.with_suffix(".json.lock")))
+    assert held.tryLock(0)
+    try:
+        assert ConfigManager.save_dark_mode(True) is False
+        assert json.loads(path.read_text(encoding="utf-8")) == {"dark_mode": False}
+    finally:
+        held.unlock()
+
+
+def test_concurrent_processes_preserve_all_updates(tmp_path):
+    """Processos sobrepostos conservam alterações independentes e um JSON final completo."""
+    worker = '''from pathlib import Path
+import sys
+from time import sleep
+sys.path.insert(0, sys.argv[1])
+from chronometer.config import ConfigManager
+ConfigManager.LOCK_TIMEOUT_MS = 3000
+original = ConfigManager._load_config.__func__
+def slow_load(cls):
+    """Alarga a janela de concorrência dentro da transação protegida."""
+    data = original(cls)
+    sleep(0.15)
+    return data
+ConfigManager._load_config = classmethod(slow_load)
+Path(sys.argv[3]).write_text("pronto", encoding="utf-8")
+while not Path(sys.argv[4]).exists():
+    sleep(0.01)
+sys.exit(0 if ConfigManager.save(sys.argv[2], True) else 1)
+'''
+    environment = os.environ.copy()
+    environment["CHRONOMETER_CONFIG_DIR"] = str(tmp_path)
+    start = tmp_path / "start"
+    ready = [tmp_path / f"ready-{index}" for index in range(3)]
+    with ExitStack() as stack:
+        processes = [
+            stack.enter_context(subprocess.Popen(
+                [sys.executable, "-c", worker, str(Path(__file__).resolve().parent.parent),
+                 f"key-{index}", str(ready[index]), str(start)],
+                env=environment, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            ))
+            for index in range(3)
+        ]
+        try:
+            deadline = monotonic() + 10
+            while not all(path.exists() for path in ready):
+                assert monotonic() < deadline, "Os processos de teste não ficaram prontos."
+                sleep(0.01)
+            start.write_text("iniciar", encoding="utf-8")
+            for process in processes:
+                output, errors = process.communicate(timeout=10)
+                assert process.returncode == 0, (output, errors)
+            stored = json.loads((tmp_path / "config.json").read_text(encoding="utf-8"))
+            assert all(stored[f"key-{index}"] is True for index in range(3))
+            assert not list(tmp_path.glob("*.tmp"))
+        finally:
+            for process in processes:
+                if process.poll() is None:
+                    process.kill()
+                process.communicate(timeout=5)
+
+
+def test_invalid_index_respects_explicit_fallback(tmp_path, monkeypatch):
+    """A normalização não elimina a alternativa específica pedida pelo chamador."""
+    path = tmp_path / "config.json"
+    path.write_text('{"last_monitor_index": null}', encoding="utf-8")
+    monkeypatch.setattr(ConfigManager, "CONFIG_FILE", path)
+    assert ConfigManager.get_last_monitor_index(default=0) == 0
 
 
 if __name__ == "__main__":

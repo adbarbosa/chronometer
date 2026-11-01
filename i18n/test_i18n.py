@@ -34,12 +34,45 @@ def test_language_loading(language, monkeypatch):
 
 
 def test_missing_catalog_uses_original_strings(monkeypatch):
-    """Um catálogo ausente conserva o código pedido e apresenta as mensagens originais."""
+    """Um idioma não registado usa português e mantém o código ativo coerente."""
     monkeypatch.setattr(builtins, "_", lambda text: text, raising=False)
     monkeypatch.setattr(i18n, "_current_language", None)
     i18n.setup_i18n("zz_ZZ")
-    assert i18n.get_current_language() == "zz_ZZ"
+    assert i18n.get_current_language() == "pt_PT"
     assert builtins.__dict__["_"]("Abrir") == "Abrir"
+
+
+@pytest.mark.parametrize("language", [None, "", "   ", "en-US"])
+def test_empty_language_and_separator_use_system_or_registered_code(language, monkeypatch):
+    """Uma preferência vazia usa o sistema e um código regional normaliza o separador."""
+    monkeypatch.setattr(builtins, "_", lambda text: text, raising=False)
+    monkeypatch.setattr(i18n, "_current_language", None)
+    monkeypatch.setattr(i18n, "_get_system_language", lambda: "en_US")
+    assert i18n.setup_i18n(language) == "en_US"
+    assert i18n.get_current_language() == "en_US"
+    assert builtins.__dict__["_"]("Iniciar") == "Start"
+
+
+def test_missing_registered_catalog_reports_portuguese(tmp_path, monkeypatch):
+    """Sem ficheiros de tradução, o idioma efetivo e as mensagens são portugueses."""
+    monkeypatch.setattr(builtins, "_", lambda text: text, raising=False)
+    monkeypatch.setattr(i18n, "_current_language", None)
+    monkeypatch.setattr(i18n, "LOCALE_DIR", tmp_path)
+    assert i18n.setup_i18n("en_US") == "pt_PT"
+    assert i18n.get_current_language() == "pt_PT"
+    assert builtins.__dict__["_"]("Iniciar") == "Iniciar"
+
+
+def test_corrupt_catalog_falls_back_without_misleading_selector(tmp_path, monkeypatch):
+    """Um MO inválido não mantém o nome do idioma cuja tradução falhou."""
+    catalog = tmp_path / "en_US" / "LC_MESSAGES" / "chronometer.mo"
+    catalog.parent.mkdir(parents=True)
+    catalog.write_bytes(b"invalid mo")
+    monkeypatch.setattr(builtins, "_", lambda text: text, raising=False)
+    monkeypatch.setattr(i18n, "_current_language", None)
+    monkeypatch.setattr(i18n, "LOCALE_DIR", tmp_path)
+    assert i18n.setup_i18n("en_US") == "pt_PT"
+    assert i18n.get_current_language() == "pt_PT"
 
 
 def _fields(text: str) -> set[str]:

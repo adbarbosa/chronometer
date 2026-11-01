@@ -7,8 +7,10 @@ Idiomas suportados: pt_PT (Portugal), en_US (English)
 
 import builtins
 import gettext
+import struct
 
 from PyQt6.QtCore import QLocale
+from chronometer.config import ConfigManager
 from chronometer.resources import resource_path
 
 LOCALE_DIR = resource_path("i18n", "locales")
@@ -37,39 +39,38 @@ def _get_system_language() -> str:
     return 'pt_PT'
 
 
+def _registered_language(lang: str | None) -> str:
+    """Normaliza um pedido e resolve códigos não registados para o idioma por defeito."""
+    candidate = lang.strip().replace("-", "_") if isinstance(lang, str) else ""
+    if not candidate:
+        candidate = _get_system_language()
+    return candidate if candidate in ConfigManager.LANGUAGE_NAMES else ConfigManager.DEFAULT_LANGUAGE
+
+
 def get_current_language() -> str:
-    """Retorna o idioma atualmente ativo."""
-    return _current_language or _get_system_language()
+    """Devolve o idioma aplicado, sem confundir uma preferência vazia com o sistema."""
+    return _current_language if _current_language is not None else _registered_language(None)
 
 
 def setup_i18n(lang: str | None = None) -> str:
-    """
-    Configura gettext para o idioma especificado.
+    """Instala a tradução disponível e devolve o código realmente apresentado na interface.
 
-    Args:
-        lang: Idioma no formato 'pt_PT', 'en_US', etc. Se None, detecta do sistema.
-
-    Returns:
-        O código pedido ou detetado, mesmo quando falta o catálogo e se usam os textos originais.
+    Um pedido vazio usa a deteção do sistema. Se faltar o catálogo pedido ou este
+    estiver inválido, tenta português e, em último caso, os textos originais.
     """
     global _current_language  # pylint: disable=global-statement
 
-    if lang is None:
-        lang = _get_system_language()
-
-    _current_language = lang
-
-    try:
-        translation = gettext.translation(
-            "chronometer",
-            localedir=str(LOCALE_DIR),
-            languages=[lang],
-            fallback=True
-        )
-        # Instalar globalmente no builtins para que _() funcione em todo o lado
-        builtins.__dict__['_'] = translation.gettext
-    except Exception:
-        # Fallback: usar identidade (sem tradução)
-        builtins.__dict__['_'] = lambda x: x
-
-    return lang
+    requested = _registered_language(lang)
+    active = ConfigManager.DEFAULT_LANGUAGE
+    translation = gettext.NullTranslations()
+    for candidate in dict.fromkeys((requested, ConfigManager.DEFAULT_LANGUAGE)):
+        try:
+            translation = gettext.translation("chronometer", localedir=str(LOCALE_DIR), languages=[candidate])
+            active = candidate
+            break
+        except (OSError, ValueError, EOFError, struct.error, LookupError):
+            # Catálogos ausentes ou danificados não devem impedir o arranque.
+            continue
+    _current_language = active
+    builtins.__dict__["_"] = translation.gettext
+    return active
