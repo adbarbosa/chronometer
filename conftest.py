@@ -4,6 +4,7 @@ import builtins
 import os
 
 import pytest
+from PyQt6 import sip
 from PyQt6.QtCore import QCoreApplication, QEvent
 from PyQt6.QtWidgets import QApplication
 
@@ -37,11 +38,10 @@ def isolated_windows(qt_app, monkeypatch, tmp_path):
 
     yield create_panel
     for panel in panels:
-        panel.countdown_timer.stop()
-        panel.clock_timer.stop()
-        panel.output_window.output_clock_timer.stop()
-        panel.output_window.stop_attention_flash()
+        if sip.isdeleted(panel):
+            continue
         panel.close()
+        panel.output_window.deleteLater()
         panel.deleteLater()
     QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
     qt_app.processEvents()

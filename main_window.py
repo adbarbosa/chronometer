@@ -14,21 +14,21 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from PyQt6.QtCore import QDateTime, QTimer, Qt, QUrl, QSize
-from PyQt6.QtGui import QDesktopServices
+from PyQt6.QtCore import QDateTime, QTimer, Qt, QUrl, QSize, pyqtSlot
+from PyQt6.QtGui import QDesktopServices, QScreen
 
 from chronometer import __version__
 from chronometer.about_dialog import GITHUB_URL, AboutDialog
 from chronometer.config import ConfigManager
 from chronometer.countdown import Countdown
+from chronometer.displays import DisplayInfo, DisplayManager
 from chronometer.i18n import setup_i18n, get_current_language
-from chronometer.theme import CLOCK_INTERVAL, CONTROL, COUNTDOWN_INTERVAL, build_control_styles
+from chronometer.theme import (
+    CLOCK_INTERVAL, CONTROL, COUNTDOWN_INTERVAL, PREFERENCE_MESSAGE_MS, build_control_styles,
+)
 from chronometer.timer_window import TimerWindow
 from chronometer.icon_manager import get_app_icon
-from chronometer.windows_displays import (
-    enumerate_native_displays,
-    find_native_display,
-)
+
 
 DEFAULT_MINUTES = 10
 
@@ -43,6 +43,9 @@ class MainWindow(QMainWindow):
         self.setWindowIcon(get_app_icon())
 
         self.countdown = Countdown(DEFAULT_MINUTES * 60)
+        self.display_manager = DisplayManager()
+        self._opened_monitor_id: str | None = None
+        self._output_closed = False
 
         # Carregar preferência de tema
         self.dark_mode = ConfigManager.get_dark_mode()
@@ -57,6 +60,7 @@ class MainWindow(QMainWindow):
 
         # Inicializa a janela de saída
         self.output_window = TimerWindow()
+        self.destroyed.connect(self.output_window.deleteLater)
 
         self._build_ui()
         self._build_menu_bar()
@@ -200,6 +204,7 @@ class MainWindow(QMainWindow):
         container = QWidget()
         container.setLayout(layout)
         self.setCentralWidget(container)
+        self.statusBar().setSizeGripEnabled(False)
 
     def _connect_signals(self) -> None:
         """Liga as ações do utilizador e as alterações de monitores."""
@@ -208,8 +213,9 @@ class MainWindow(QMainWindow):
         self.btn_refresh_monitors.clicked.connect(self._populate_monitors)
         app = QApplication.instance()
         if app is not None:
-            app.screenAdded.connect(lambda _screen: self._populate_monitors())
+            app.screenAdded.connect(self._populate_monitors)
             app.screenRemoved.connect(self._handle_screen_removed)
+        self.output_window.visibility_changed.connect(self._on_output_visibility_changed)
         self.btn_dark_mode.clicked.connect(self.toggle_dark_mode)
         self.btn_start.clicked.connect(self.start_countdown)
         self.btn_stop.clicked.connect(self.stop_countdown)
@@ -251,140 +257,84 @@ class MainWindow(QMainWindow):
         QDesktopServices.openUrl(QUrl(GITHUB_URL))
 
     @staticmethod
-    def _get_screen_id(screen) -> str:
-        """Identifica um monitor por metadados ou pela geometria disponível."""
-        metadata = (
-            screen.serialNumber(),
-            screen.manufacturer(),
-            screen.model(),
-            screen.name(),
-        )
-        values = [value.strip() for value in metadata if value and value.strip()]
-        if values:
-            return "metadata:" + "|".join(values)
-
-        geometry = screen.geometry()
+    def _display_text(display: DisplayInfo) -> str:
+        """Apresenta o nome, descrição e geometria de um monitor disponível."""
+        geometry = display.screen.geometry()
+        name = display.name or _("Monitor")
+        description = f" - {display.description}" if display.description else ""
         return (
-            f"geometry:{geometry.x()}:{geometry.y()}:{geometry.width()}"
-            f":{geometry.height()}"
+            f"{name}{description} ({geometry.width()}×{geometry.height()}"
+            f" @ {geometry.x()},{geometry.y()})"
         )
 
-    @classmethod
-    def _get_screen_id_in_list(cls, screen, screens, native_displays=None) -> str:
-        """Prefere a identidade Windows e distingue monitores com metadados iguais."""
-        native_display = find_native_display(screen.name(), native_displays or [])
-        if native_display is not None:
-            return f"windows:{native_display.identifier}"
-
-        monitor_id = cls._get_screen_id(screen)
-        matching_screens = [
-            candidate
-            for candidate in screens
-            if cls._get_screen_id(candidate) == monitor_id
-        ]
-        if len(matching_screens) <= 1:
-            return monitor_id
-
-        geometry = screen.geometry()
-        return (
-            f"{monitor_id}|geometry:{geometry.x()}:{geometry.y()}"
-            f":{geometry.width()}:{geometry.height()}"
-        )
-
+    @pyqtSlot()
     def _populate_monitors(self) -> None:
-        """Atualiza a lista, preservando a seleção quando ainda existe."""
+        """Atualiza a lista sem perder o estado real da saída nem reter callbacks anónimos."""
         selected_id = self.combo_monitors.currentData()
+        displays = self.display_manager.refresh()
         self.combo_monitors.clear()
-        screens = QApplication.screens()
-        native_displays = enumerate_native_displays()
-        for screen in screens:
-            geo = screen.geometry()
-            name = screen.name() or _("Monitor")
-            native_display = find_native_display(screen.name(), native_displays)
-            monitor_id = self._get_screen_id_in_list(
-                screen, screens, native_displays
-            )
-            display_name = native_display.device_name if native_display else name
-            display_description = (
-                f" - {native_display.description}"
-                if native_display and native_display.description
-                else ""
-            )
-            self.combo_monitors.addItem(
-                f"{display_name}{display_description} "
-                f"({geo.width()}×{geo.height()} @ {geo.x()},{geo.y()})",
-                monitor_id,
-            )
-        selected_index = self.combo_monitors.findData(selected_id)
-        if selected_index >= 0:
-            self.combo_monitors.setCurrentIndex(selected_index)
-        elif len(screens) > 1:
-            self.combo_monitors.setCurrentIndex(1)
-        self.label_status.setText(
-            _("{count} monitor(es) detectado(s)").format(count=len(screens))
-        )
+        for display in displays:
+            self.combo_monitors.addItem(self._display_text(display), display.identifier)
+        index = self.display_manager.preferred_index(selected_id, 1)
+        self.combo_monitors.setCurrentIndex(index)
+        self._update_output_status()
 
+    @pyqtSlot(QScreen)
     def _handle_screen_removed(self, removed_screen) -> None:
-        """Atualiza os monitores e tenta recolocar uma saída que estava visível."""
-        output_screen = self.output_window.screen()
+        """Tenta reabrir a saída visível se o seu monitor foi removido."""
+        output_was_removed = self.output_window.screen() is removed_screen
         output_was_visible = self.output_window.isVisible()
-        output_was_removed = output_screen is removed_screen
-
         self._populate_monitors()
-
         if output_was_visible and output_was_removed and self.combo_monitors.count():
             self.setup_monitors()
 
     def _load_saved_monitor_preference(self) -> None:
-        """Carrega e seleciona o último monitor usado, com fallback."""
-        saved_id = ConfigManager.get_last_monitor_id()
-        saved_index = self.combo_monitors.findData(saved_id)
-        if saved_index >= 0:
-            self.combo_monitors.setCurrentIndex(saved_index)
-            return
-
-        saved_idx = ConfigManager.get_last_monitor_index(default=1)
-        if 0 <= saved_idx < self.combo_monitors.count():
-            self.combo_monitors.setCurrentIndex(saved_idx)
-        elif self.combo_monitors.count() > 1:
-            # Fallback: usar segundo monitor se disponível
-            self.combo_monitors.setCurrentIndex(1)
-        else:
-            # Apenas um monitor: usar índice 0
-            self.combo_monitors.setCurrentIndex(0)
+        """Restaura a identidade guardada, o índice antigo ou a alternativa disponível."""
+        index = self.display_manager.preferred_index(
+            ConfigManager.get_last_monitor_id(), ConfigManager.get_last_monitor_index(),
+        )
+        self.combo_monitors.setCurrentIndex(index)
 
     def setup_monitors(self) -> None:
-        """Abre a saída no monitor selecionado e guarda a sua identidade."""
-        monitor_id = self.combo_monitors.currentData()
-        screens = QApplication.screens()
-        native_displays = enumerate_native_displays()
-        screen = next(
-            (
-                screen
-                for screen in screens
-                if self._get_screen_id_in_list(
-                    screen, screens, native_displays
-                ) == monitor_id
-            ),
-            None,
-        )
-        if screen is None:
+        """Associa a saída ao ecrã selecionado, abre-a e tenta guardar a preferência."""
+        display = self.display_manager.open_output(self.output_window, self.combo_monitors.currentData())
+        if display is None:
             self._populate_monitors()
             return
-
-        geometry = screen.geometry()
-        self.output_window.move(geometry.left(), geometry.top())
-        self.output_window.showFullScreen()
-        self.label_status.setText(
-            _("Aberto em: {monitor_name}").format(
-                monitor_name=self.combo_monitors.currentText()
-            )
-        )
-
-        # Guardar preferência do monitor
-        ConfigManager.save_monitor_id(monitor_id)
-
+        self._opened_monitor_id = display.identifier
+        self._output_closed = False
+        self._update_output_status()
+        self._report_save_result(ConfigManager.save_monitor_id(display.identifier))
         self._update_displays()
+
+    @pyqtSlot(bool)
+    def _on_output_visibility_changed(self, visible: bool) -> None:
+        """Recebe mudanças de visibilidade, incluindo cliques no relógio e fecho pelo sistema."""
+        self._output_closed = not visible
+        self._update_output_status()
+
+    def _update_output_status(self) -> None:
+        """Constrói o estado a partir da saída, sem confundir seleção pendente com monitor aberto."""
+        if self.output_window.isVisible():
+            display = self.display_manager.find(self._opened_monitor_id)
+            if display is not None:
+                name = self._display_text(display)
+            else:
+                screen = self.output_window.screen()
+                name = (screen.name() if screen is not None else "") or _("Monitor")
+            text = _("Aberto em: {monitor_name}").format(monitor_name=name)
+        elif self._output_closed:
+            text = _("Output fechado.")
+        else:
+            text = _("{count} monitor(es) detectado(s)").format(count=len(self.display_manager.displays))
+        self.label_status.setText(text)
+
+    def _report_save_result(self, saved: bool) -> None:
+        """Informa uma falha de persistência sem bloquear a apresentação."""
+        if saved:
+            self.statusBar().clearMessage()
+        else:
+            self.statusBar().showMessage(_("Preferências não guardadas. Tente novamente."), PREFERENCE_MESSAGE_MS)
 
     def load_preset(self, minutes: int) -> None:
         """Carrega uma duração (em minutos) e atualiza os ecrãs."""
@@ -425,12 +375,12 @@ class MainWindow(QMainWindow):
     def close_output_window(self) -> None:
         """Esconde a janela de saída."""
         self.output_window.hide()
-        self.label_status.setText(_("Output fechado."))
+        self._on_output_visibility_changed(False)
 
     def toggle_dark_mode(self) -> None:
         """Alterna e guarda o modo escuro."""
         self.dark_mode = not self.dark_mode
-        ConfigManager.save_dark_mode(self.dark_mode)
+        self._report_save_result(ConfigManager.save_dark_mode(self.dark_mode))
         self._apply_theme()
 
     def _select_current_language(self) -> None:
@@ -448,12 +398,14 @@ class MainWindow(QMainWindow):
         lang_code = self.combo_language.itemData(index)
         if lang_code:
             # Guardar preferência
-            ConfigManager.save_language(lang_code)
+            saved = ConfigManager.save_language(lang_code)
             # Reconfigurar i18n
             setup_i18n(lang_code)
             # Atualizar toda a UI
             self._retranslate_ui()
             self.output_window.retranslate_ui()
+            self._select_current_language()
+            self._report_save_result(saved)
 
     def _retranslate_ui(self) -> None:
         """Atualiza todos os textos da UI para o idioma atual."""
@@ -488,11 +440,7 @@ class MainWindow(QMainWindow):
         else:
             self.btn_dark_mode.setText(f"\U0001f319 {_('Modo Escuro')}")
 
-        # Atualizar status dos monitores
-        screens = QApplication.screens()
-        self.label_status.setText(
-            _("{count} monitor(es) detectado(s)").format(count=len(screens))
-        )
+        self._update_output_status()
 
     def _apply_theme(self) -> None:
         """Aplica os estilos centralizados ao painel de controlo."""
@@ -505,6 +453,7 @@ class MainWindow(QMainWindow):
             self.btn_dark_mode.setText(f"\U0001f319 {_('Modo Escuro')}")
 
         self.centralWidget().setStyleSheet(s["background"])
+        self.statusBar().setStyleSheet(s["status_bar"])
         self.label_status.setStyleSheet(s["status"])
         self.time_main_label.setStyleSheet(s["timer"])
         self.presets_container.setStyleSheet(s["presets_box"])
@@ -558,5 +507,10 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event) -> None:  # pylint: disable=invalid-name
         """Fecha também a janela de saída."""
+        self.countdown.pause()
+        self.countdown_timer.stop()
+        self.clock_timer.stop()
+        self.output_window.stop_attention_flash()
+        self.output_window.output_clock_timer.stop()
         self.output_window.close()
         event.accept()

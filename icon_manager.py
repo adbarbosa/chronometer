@@ -20,8 +20,9 @@ def get_app_icon() -> QIcon:
     Returns:
         QIcon: O ícone da aplicação ou um ícone vazio se não existir nenhum recurso.
     """
-    if ICO_ICON_PATH.exists():
-        return QIcon(str(ICO_ICON_PATH))
-    if SVG_ICON_PATH.exists():
-        return QIcon(str(SVG_ICON_PATH))
+    for path in (ICO_ICON_PATH, SVG_ICON_PATH):
+        if path.exists():
+            icon = QIcon(str(path))
+            if not icon.isNull():
+                return icon
     return QIcon()

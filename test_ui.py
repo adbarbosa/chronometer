@@ -1,8 +1,9 @@
 """Regressões dos controlos e da coordenação das janelas em Qt offscreen."""
 
+import sys
 from types import SimpleNamespace
 
-from PyQt6.QtCore import QRect
+from PyQt6.QtCore import QCoreApplication, QEvent, QRect
 from PyQt6.QtTest import QTest
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QApplication
@@ -10,6 +11,8 @@ from PyQt6.QtWidgets import QApplication
 from chronometer.about_dialog import AboutDialog
 from chronometer.config import ConfigManager
 from chronometer.countdown import Countdown
+from chronometer.displays import DisplayInfo
+from chronometer import i18n
 from chronometer.theme import DARK, LIGHT
 from chronometer.windows_displays import NativeDisplay, find_native_display
 
@@ -109,6 +112,81 @@ def test_monitor_identity_and_saved_fallback(window_factory, monkeypatch):
     ConfigManager.save_monitor_id(first_id)
     assert window_factory().combo_monitors.currentData() == first_id
     native = NativeDisplay("physical-id", "screen", "Monitor de teste")
-    monkeypatch.setattr("chronometer.main_window.enumerate_native_displays", lambda: [native])
+    monkeypatch.setattr("chronometer.displays.enumerate_native_displays", lambda: [native])
     assert window_factory().combo_monitors.itemData(0) == "windows:physical-id"
     assert find_native_display(r"\\.\DISPLAY1", [NativeDisplay("id", "DISPLAY1", "")]) is not None
+
+
+def test_output_status_follows_actual_visibility_and_language(window):
+    """O painel acompanha cliques no relógio, fecho pelo sistema e mudança de idioma."""
+    window.setup_monitors()
+    assert window.output_window.isVisible()
+    assert window.label_status.text().startswith("Aberto em:")
+    window.btn_refresh_monitors.click()
+    assert window.label_status.text().startswith("Aberto em:")
+    window.combo_language.setCurrentIndex(window.combo_language.findData("en_US"))
+    assert window.label_status.text().startswith("Opened in:")
+    QTest.mouseClick(window.output_window.clock_label, Qt.MouseButton.LeftButton)
+    assert window.label_status.text() == "Output closed."
+    window.setup_monitors()
+    window.output_window.close()
+    assert window.label_status.text() == "Output closed."
+
+
+def test_selection_does_not_relabel_an_output_before_open(window_factory, monkeypatch):
+    """Selecionar outro monitor não deve anunciar que a saída já mudou de ecrã."""
+    screen = QApplication.primaryScreen()
+    panel = window_factory()
+    first = DisplayInfo(screen, "first", "Primeiro", "")
+    second = DisplayInfo(screen, "second", "Segundo", "")
+    monkeypatch.setattr(panel.display_manager, "refresh", lambda: [first, second])
+    panel.display_manager.displays = [first, second]
+    panel.btn_refresh_monitors.click()
+    panel.combo_monitors.setCurrentIndex(0)
+    panel.setup_monitors()
+    panel.combo_monitors.setCurrentIndex(1)
+    panel.combo_language.setCurrentIndex(panel.combo_language.findData("en_US"))
+    assert "Primeiro" in panel.label_status.text()
+    assert "Segundo" not in panel.label_status.text()
+
+
+def test_failed_save_is_visible_without_blocking_timer(window, monkeypatch):
+    """Uma gravação falhada é comunicada sem interromper a contagem nem abrir um diálogo."""
+    monkeypatch.setattr(ConfigManager, "save_dark_mode", lambda _value: False)
+    window.start_countdown()
+    window.toggle_dark_mode()
+    assert "não guardadas" in window.statusBar().currentMessage()
+    assert window.countdown.is_running
+    monkeypatch.setattr(ConfigManager, "save_dark_mode", lambda _value: True)
+    window.toggle_dark_mode()
+    assert not window.statusBar().currentMessage()
+
+
+def test_empty_saved_language_matches_visible_controls(window_factory, monkeypatch):
+    """Uma preferência vazia usa inglês do sistema tanto no seletor como nos controlos."""
+    monkeypatch.setattr(i18n, "_get_system_language", lambda: "en_US")
+    assert ConfigManager.save_language("")
+    assert i18n.setup_i18n(ConfigManager.get_language()) == "en_US"
+    panel = window_factory()
+    assert panel.combo_language.currentData() == "en_US"
+    assert panel.btn_start.text() == "Start"
+
+
+def test_destroyed_panels_leave_no_output_or_screen_callback(window_factory, qt_app, monkeypatch):
+    """Destruir ambos os painéis liberta a saída e não mantém callbacks para widgets eliminados."""
+    failures = []
+    monkeypatch.setattr(sys, "excepthook", lambda *error: failures.append(error))
+    panels = [window_factory() for _index in range(3)]
+    output_objects = [panel.output_window for panel in panels]
+    for panel in panels:
+        panel.close()
+        panel.deleteLater()
+    QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+    QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+    qt_app.screenAdded.emit(qt_app.primaryScreen())
+    qt_app.processEvents()
+    assert not failures
+    assert all(output not in qt_app.topLevelWidgets() for output in output_objects)
+    # A fábrica já não deve tentar fechar objetos que este teste destruiu explicitamente.
+    for panel in panels:
+        assert not any(widget is panel for widget in qt_app.topLevelWidgets())

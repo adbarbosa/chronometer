@@ -98,7 +98,7 @@ FONT_FAMILY = "Verdana"
 
 # Dimensões dos widgets; as durações e os estados pertencem à lógica da aplicação.
 CONTROL = {
-    "size": (680, 520),
+    "size": (680, 550),
     "margins": (12, 10, 12, 10),
     "spacing": 8,
     "monitor_height": 32,
@@ -135,6 +135,7 @@ FLASH_INTERVAL_MS   = 250
 FLASH_MAX_TICKS     = 8      # 8 × 250 ms = 2 segundos
 COUNTDOWN_INTERVAL  = 1000
 CLOCK_INTERVAL      = 1000
+PREFERENCE_MESSAGE_MS = 6000
 
 # ---- Escala do texto na janela de output (segundo monitor) ----------------
 # Proporção em relação ao tamanho da janela (0.0 – 1.0)
@@ -178,6 +179,7 @@ def build_control_styles(dark: bool) -> dict[str, str]:
     return {
         "background": f"background-color: {t['bg']};",
         "status": f"font-size: {f['status']}; color: {t['status_text']};",
+        "status_bar": f"background-color: {t['bg']}; color: {t['status_text']};",
         "timer": (
             f"font-size: {f['timer_main']}; font-family: {FONT_FAMILY}; font-weight: 700;"
             f"color: {t['timer_text']}; background: {t['timer_bg']};"

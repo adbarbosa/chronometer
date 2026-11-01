@@ -1,8 +1,8 @@
 """Janela de saída com o temporizador para o público."""
 
 from PyQt6.QtWidgets import QLabel, QVBoxLayout, QWidget
-from PyQt6.QtCore import QDateTime, QTimer, Qt
-from PyQt6.QtGui import QMouseEvent
+from PyQt6.QtCore import QDateTime, QTimer, Qt, pyqtSignal
+from PyQt6.QtGui import QHideEvent, QMouseEvent, QShowEvent
 
 from chronometer.theme import (
     CLOCK_INTERVAL, FLASH_INTERVAL_MS, FLASH_MAX_TICKS,
@@ -18,6 +18,8 @@ from chronometer.icon_manager import get_app_icon
 class TimerWindow(QWidget):
     """Janela que aparecerá no segundo monitor (Output)"""
 
+    visibility_changed = pyqtSignal(bool)
+
     def __init__(self):
         """Cria o visor, o relógio local e o efeito de atenção."""
         super().__init__()
@@ -27,7 +29,7 @@ class TimerWindow(QWidget):
         self.flash_timer = QTimer(self)
         self.flash_timer.setInterval(FLASH_INTERVAL_MS)
         self.flash_timer.timeout.connect(self._toggle_flash)
-        self.flash_red = True
+        self._flash_phase: bool | None = None
         self._flash_ticks = 0
         self._time_color = OUTPUT["time_normal"]
 
@@ -62,7 +64,7 @@ class TimerWindow(QWidget):
         w = event.size().width()
         self._timer_size = min(int(h * OUTPUT_TIMER_H_RATIO), int(w * OUTPUT_TIMER_W_RATIO))
         self._clock_size = max(int(self._timer_size * OUTPUT_CLOCK_RATIO), OUTPUT_CLOCK_MIN_PX)
-        self._apply_time_style(self._time_color)
+        self._render_output()
         self.clock_label.setStyleSheet(output_clock_style(self._clock_size))
         super().resizeEvent(event)
 
@@ -86,6 +88,16 @@ class TimerWindow(QWidget):
             color = OUTPUT["time_normal"]
 
         self._time_color = color
+        self._render_output()
+
+    def _render_output(self) -> None:
+        """Combina a cor temporal com o contraste exigido pela fase atual do efeito."""
+        if self._flash_phase is None:
+            self.setStyleSheet(output_bg_style())
+            color = self._time_color
+        else:
+            self.setStyleSheet(output_flash_bg(self._flash_phase))
+            color = OUTPUT["flash_contrast"] if self._flash_phase else OUTPUT["flash_contrast_white"]
         self._apply_time_style(color)
 
     def _apply_time_style(self, color: str) -> None:
@@ -94,35 +106,38 @@ class TimerWindow(QWidget):
 
     def start_attention_flash(self) -> None:
         """Inicia o piscar de atenção."""
-        self.flash_red = True
+        self._flash_phase = None
         self._flash_ticks = 0
-        if not self.flash_timer.isActive():
-            self.flash_timer.start()
+        self._render_output()
+        self.flash_timer.start()
 
     def stop_attention_flash(self) -> None:
         """Para o piscar e restaura o fundo."""
         self.flash_timer.stop()
-        self._restore_background()
-
-    def _restore_background(self) -> None:
-        """Restaura o fundo e a cor normal após o efeito de atenção."""
-        self.setStyleSheet(output_bg_style())
-        self._apply_time_style(self._time_color)
+        self._flash_phase = None
+        self._render_output()
 
     def _toggle_flash(self) -> None:
         """Alterna o fundo até ao limite de eventos do efeito de atenção."""
+        if not self.flash_timer.isActive():
+            return
         self._flash_ticks += 1
         if self._flash_ticks >= FLASH_MAX_TICKS:
             self.stop_attention_flash()
             return
 
-        if self.flash_red:
-            self.setStyleSheet(output_flash_bg(True))
-            self._apply_time_style(OUTPUT["flash_contrast"])
-        else:
-            self.setStyleSheet(output_flash_bg(False))
-            self._apply_time_style(OUTPUT["flash_contrast_white"])
-        self.flash_red = not self.flash_red
+        self._flash_phase = True if self._flash_phase is None else not self._flash_phase
+        self._render_output()
+
+    def showEvent(self, event: QShowEvent) -> None:
+        """Notifica o painel depois de a saída se tornar visível."""
+        super().showEvent(event)
+        self.visibility_changed.emit(self.isVisible())
+
+    def hideEvent(self, event: QHideEvent) -> None:
+        """Notifica a visibilidade após esconder ou fechar a janela."""
+        super().hideEvent(event)
+        self.visibility_changed.emit(self.isVisible())
 
     def _update_output_clock(self) -> None:
         """Apresenta a hora local no formato de 24 horas."""
